@@ -3,6 +3,7 @@ package cs5150athletetracking.com.athletetracking;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
+import static org.mockito.Mockito.*;
 
 public class AthleteTrackerTestCase extends ApplicationTestCase<Application> {
 
