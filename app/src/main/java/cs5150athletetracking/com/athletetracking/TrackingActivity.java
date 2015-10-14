@@ -6,17 +6,25 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class TrackingActivity extends AppCompatActivity {
+
+    private LocationRecorder locRecorder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracking);
-        Button trackingButton = (Button) findViewById(R.id.trackingButton);
+        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
         trackingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d("AthleteTracking", "button pressed!");
+                if (locRecorder == null || locRecorder.hasError()) {
+                    locRecorder = new LocationRecorder("test", TrackingActivity.this);
+                    locRecorder.start();
+                    trackingButton.setVisibility(View.INVISIBLE);
+                }
             }
         });
     }

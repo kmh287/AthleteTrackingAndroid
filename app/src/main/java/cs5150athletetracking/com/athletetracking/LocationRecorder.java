@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -32,6 +33,8 @@ import io.testfire.Testfire;
 
 public class LocationRecorder {
 
+    public static final int LOC_DATA_BATCH_SIZE = 100;
+
     public enum LocationRecorderError {
         NONE, PERMISSIONS, /** maybe more later **/
     }
@@ -47,7 +50,7 @@ public class LocationRecorder {
     private final ThreadPoolExecutor executor;
     private final Activity activity;
     // TODO fill in with format and locale.US!!!!!
-    private static final SimpleDateFormat format = new SimpleDateFormat();
+    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
 
     public LocationRecorder(String username, Activity activity) {
         this.username = username;
@@ -86,17 +89,24 @@ public class LocationRecorder {
         }
     }
 
+    public boolean hasError(){
+        return error.get() != null;
+    }
+
     protected class LocationRecorderRunnable implements Runnable {
 
         @Override
-        //TODO refactor to be less ugly
         public void run() {
+            if (locData.size() >= LOC_DATA_BATCH_SIZE){
+                uploadBatch();
+            }
             if (haveLocationPermission()) {
                 try {
                     Location loc = getLocation();
                     if (loc != null){
                         LocationJSON json = getLocationJSON(loc);
                         locData.add(json);
+                        Log.i("LOCATIONRECORDER", json.toString());
                         if (!paused.get()){
                             scheduleNextIteration(REGULAR_SLEEP_PERIOD);
                         }
@@ -122,8 +132,10 @@ public class LocationRecorder {
             Location loc = null;
 
             if (isGPSEnabled) {
+                manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, (LocationListener) null);
                 loc = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             } else if (isNetworkEnabled){
+                // Lower precision, but better than nothing
                 loc = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             }
             return loc;
@@ -138,6 +150,13 @@ public class LocationRecorder {
             return new LocationJSON(username, timestamp,
                                                  latitude, longitude,
                                                  altitude);
+        }
+
+        private void uploadBatch(){
+            // Send the batch to the uploader
+
+            // Clear the collection right now, regardless of the result
+            locData.clear();
         }
 
         private void scheduleNextIteration(long delay){
