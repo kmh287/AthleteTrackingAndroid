@@ -2,11 +2,10 @@ package cs5150athletetracking.com.athletetracking;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecorder;
 
 public class TrackingActivity extends AppCompatActivity {
 
