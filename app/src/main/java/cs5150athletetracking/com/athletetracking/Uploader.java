@@ -1,10 +1,12 @@
-import java.util.ArrayList;
-import java.util.List;
+package cs5150athletetracking.com.athletetracking;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Uploader implements Runnable {
 	// URL should be updated. We are currently using a test script "test_server.php"

@@ -4,6 +4,7 @@ android {
 
     compileSdkVersion 23
     buildToolsVersion "22.0.1"
+    useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
         applicationId "cs5150athletetracking.com.athletetracking"
@@ -34,7 +35,9 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.0.1'
     compile 'com.android.support:design:23.0.1'
     compile 'io.testfire:testfire-android-lib:+'
+    compile group: 'org.apache.httpcomponents' , name: 'httpclient-android' , version: '4.3.5'
 }
+
 
 repositories {
     maven {
