@@ -78,7 +78,8 @@ public class DualProviderLocationTracker  implements LocationTracker,
     public void onUpdate(Location oldLoc, long oldTime, Location newLoc, long newTime) {
         boolean update = false;
 
-        //We should update only if there is no last location, the provider is the same, or the provider is more accurate, or the old location is stale
+        // We should update only if there is no last location,
+        // the provider is the same, or the provider is more accurate, or the old location is stale
         if(lastLoc == null){
             update = true;
         }
