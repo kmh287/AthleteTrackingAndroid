@@ -8,7 +8,7 @@
     tools:context="cs5150athletetracking.com.athletetracking.TrackingActivity">
 
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="@string/beginTracking"
         android:id="@+id/trackingButton"
@@ -16,5 +16,26 @@
         android:background="@color/cornellRed"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
-        />
+        android:textColor="#ffffff"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/trackingButton"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="32dp">
+
+        <Button
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="DISCONNECTED"
+            android:id="@+id/status_button"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:background="@color/cornellRedDark"
+            android:textSize="20dp"
+            android:textColor="#ffffff"
+            android:clickable="false"/>
+    </RelativeLayout>
+
 </RelativeLayout>

@@ -8,6 +8,8 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -26,14 +28,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import cs5150athletetracking.com.athletetracking.LocationJSON;
+import cs5150athletetracking.com.athletetracking.StatusCallback;
 import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
 public class LocationRecorder {
 
-    public static final int LOC_DATA_BATCH_SIZE = 100;
+    public static final int LOC_DATA_BATCH_SIZE = 5; //TODO 100
 
     public enum LocationRecorderError {
-        NONE, PERMISSIONS, NO_PROVIDER /** maybe more later **/
+        NONE, PERMISSIONS, NO_PROVIDER; /** maybe more later **/
+
+        public String getErrorString(){
+            switch(this){
+                case PERMISSIONS:
+                    return "Insufficient permissions.";
+                case NO_PROVIDER:
+                    return "Unable to determine location";
+                default:
+                    return "No error";
+            }
+        }
     }
 
     private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
@@ -48,10 +62,12 @@ public class LocationRecorder {
     private final ThreadPoolExecutor executor;
     private final Activity activity;
     private final LocationTracker locationTracker;
+    private final StatusCallback callback;
 
-    public LocationRecorder(String username, Activity activity) {
+    public LocationRecorder(String username, Activity activity, StatusCallback callback) {
         this.username = username;
         this.activity = activity;   //TODO this may cause problems. Let's be careful
+        this.callback = callback;
         this.locData = new ArrayList<>();
         this.paused = new AtomicBoolean(true);
         this.error = new AtomicReference<>(LocationRecorderError.NONE);
@@ -103,6 +119,7 @@ public class LocationRecorder {
 
     public void fail(LocationRecorderError error, Exception e){
         this.error.set(error);
+        setStatusError(error.getErrorString());
         if (e != null) {
             Log.e(TAG, "Exception in Location Recorder", e);
         } else {
@@ -114,12 +131,45 @@ public class LocationRecorder {
         return error.get() != LocationRecorderError.NONE;
     }
 
+    // ALL UI code belongs on the main thread, hence this ugliness
+
+    private void setStatusTransmitting(final String message){
+        ThreadUtil.runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                callback.transmitting(message);
+            }
+        });
+    }
+
+    private void setStatusDisconnected(final String message){
+        ThreadUtil.runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                callback.disconnected(message);
+            }
+        });
+    }
+
+    private void setStatusError(final String message){
+        ThreadUtil.runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                callback.error(message);
+            }
+        });
+    }
+
     protected class LocationRecorderRunnable implements Runnable {
 
         @Override
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
-//                uploadBatch();
+                if (uploadBatch()){
+                    setStatusTransmitting("Transmitting");
+                } else {
+                    setStatusDisconnected("Connection Interrupted. Retrying");
+                }
             }
             if (haveLocationPermission()) {
                 if (locationTracker.hasLocation()){
@@ -138,6 +188,10 @@ public class LocationRecorder {
             } else {
                 fail(LocationRecorderError.PERMISSIONS);
             }
+        }
+
+        private boolean uploadBatch(){
+            return true;
         }
 
         private void scheduleNextIteration(long delay) {

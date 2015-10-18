@@ -2,6 +2,8 @@
 
     <color name="cornellRed">#b31b1b</color>
     <color name="cornellRedDark">#a20a0a</color>
+    <color name="disconnected">#ffff00</color>
+    <color name="transmitting">#00ff00</color>
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">

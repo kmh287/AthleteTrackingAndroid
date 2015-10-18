@@ -108,6 +108,16 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        Button registerButton = (Button) findViewById(R.id.register_button);
+        registerButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LoginActivity.this, WebViewActivity.class);
+                intent.putExtra("reqType", 0 /* register */);
+                startActivity(intent);
+            }
+        });
     }
 
     private void startTestfire(){
@@ -368,7 +378,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
-                startActivity(new Intent(LoginActivity.this, TrackingActivity.class));
+                Intent trackingIntent = new Intent(LoginActivity.this, TrackingActivity.class);
+                trackingIntent.putExtra("username", mEmail);
+                startActivity(trackingIntent);
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
