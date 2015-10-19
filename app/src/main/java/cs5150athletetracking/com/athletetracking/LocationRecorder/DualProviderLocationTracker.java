@@ -18,7 +18,6 @@ public class DualProviderLocationTracker  implements LocationTracker,
     private long lastTime;
 
     public DualProviderLocationTracker(Context context) {
-
         gps = new ProviderLocationTracker(context, ProviderLocationTracker.ProviderType.GPS);
         net = new ProviderLocationTracker(context, ProviderLocationTracker.ProviderType.NETWORK);
     }

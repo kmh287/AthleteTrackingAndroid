@@ -55,6 +55,11 @@ public class TrackingActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle bundle){
+        // TODO
+    }
+
     private boolean attemptConnection(){
         return true;    //TODO obviously fill in
     }
