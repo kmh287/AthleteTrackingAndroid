@@ -16,8 +16,9 @@ import org.json.JSONObject;
  * Created by mag94 on 10/19/15.
  */
 
-public class AsyncUploader extends AsyncTask<LocationJSON, String, Integer> {
+public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
 
+    private static final String INPUT_LABEL = "params";
     private static final String TAG = "Http Connection";
     private static final String URL_STRING = "http://ec2-54-165-208-160.compute-1.amazonaws.com/php/test_server.php";
     private static final int END_OF_STREAM = -1;
@@ -36,26 +37,20 @@ public class AsyncUploader extends AsyncTask<LocationJSON, String, Integer> {
     }
 
     @Override
-    protected Integer doInBackground(LocationJSON... params) {
+    protected Integer doInBackground(JSONObject... params) {
         Integer result = FAILURE;
 
         try {
             int count = params.length;
             for (int i = 0; i < count; i++) {
-                LocationJSON param = params[i];
+                JSONObject param = params[i];
                 StringBuilder jsonPost = new StringBuilder();
-                Iterator<String> keys = param.keys();
 
                 // Format LocationJSON argument for the POST method
                 // The format is: "key1=value1&key2=value2"
-                while (keys.hasNext()) {
-                    String key = (String)keys.next();
-                    if (jsonPost.length() != 0)
-                        jsonPost.append('&');
-                    jsonPost.append(URLEncoder.encode(key, "UTF-8"));
-                    jsonPost.append('=');
-                    jsonPost.append(URLEncoder.encode(String.valueOf(param.get(key)), "UTF-8"));
-                }
+                jsonPost.append(URLEncoder.encode(INPUT_LABEL, "UTF-8"));
+                jsonPost.append('=');
+                jsonPost.append(param.toString());
 
                 byte[] jsonPostBytes = jsonPost.toString().getBytes("UTF-8");
 

@@ -10,8 +10,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class LocationJSON extends JSONObject {
-    private Map<String,Object> params;
-
     private enum SERIALIZE_KEY{
         USER, TIMESTAMP, LATITUDE, LONGITUDE, ALTITUDE;
 
@@ -40,13 +38,6 @@ public class LocationJSON extends JSONObject {
                         double latitude, double longitude,
                         double altitude){
         try {
-            this.params = new LinkedHashMap<>();
-            this.params.put(SERIALIZE_KEY.USER.toString(), username);
-            this.params.put(SERIALIZE_KEY.TIMESTAMP.toString(), timestamp);
-            this.params.put(SERIALIZE_KEY.LATITUDE.toString(), latitude);
-            this.params.put(SERIALIZE_KEY.LONGITUDE.toString(), longitude);
-            this.params.put(SERIALIZE_KEY.ALTITUDE.toString(), altitude);
-
             this.put(SERIALIZE_KEY.USER.toString(),     username);
             this.put(SERIALIZE_KEY.TIMESTAMP.toString(),timestamp);
             this.put(SERIALIZE_KEY.LATITUDE.toString(), latitude);
