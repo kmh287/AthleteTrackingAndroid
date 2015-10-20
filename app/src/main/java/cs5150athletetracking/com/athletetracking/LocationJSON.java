@@ -3,10 +3,14 @@ package cs5150athletetracking.com.athletetracking;
 
 import android.util.Log;
 
+import java.util.Map;
+import java.util.LinkedHashMap;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class LocationJSON extends JSONObject {
+    private Map<String,Object> params;
 
     private enum SERIALIZE_KEY{
         USER, TIMESTAMP, LATITUDE, LONGITUDE, ALTITUDE;
@@ -33,13 +37,20 @@ public class LocationJSON extends JSONObject {
     private final String TAG = "LocationJSON";
 
     public LocationJSON(String username, String timestamp,
-                        double latitude, double longitutde,
+                        double latitude, double longitude,
                         double altitude){
         try {
+            this.params = new LinkedHashMap<>();
+            this.params.put(SERIALIZE_KEY.USER.toString(), username);
+            this.params.put(SERIALIZE_KEY.TIMESTAMP.toString(), timestamp);
+            this.params.put(SERIALIZE_KEY.LATITUDE.toString(), latitude);
+            this.params.put(SERIALIZE_KEY.LONGITUDE.toString(), longitude);
+            this.params.put(SERIALIZE_KEY.ALTITUDE.toString(), altitude);
+
             this.put(SERIALIZE_KEY.USER.toString(),     username);
             this.put(SERIALIZE_KEY.TIMESTAMP.toString(),timestamp);
             this.put(SERIALIZE_KEY.LATITUDE.toString(), latitude);
-            this.put(SERIALIZE_KEY.LONGITUDE.toString(),longitutde);
+            this.put(SERIALIZE_KEY.LONGITUDE.toString(),longitude);
             this.put(SERIALIZE_KEY.ALTITUDE.toString(), altitude);
         } catch (JSONException e){
             Log.e(TAG, "Problem in constructor", e);

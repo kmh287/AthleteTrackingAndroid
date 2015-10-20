@@ -16,7 +16,7 @@ import org.json.JSONObject;
  * Created by mag94 on 10/19/15.
  */
 
-public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
+public class AsyncUploader extends AsyncTask<LocationJSON, String, Integer> {
 
     private static final String TAG = "Http Connection";
     private static final String URL_STRING = "http://ec2-54-165-208-160.compute-1.amazonaws.com/php/test_server.php";
@@ -36,15 +36,15 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
     }
 
     @Override
-    protected Integer doInBackground(JSONObject... params) {
+    protected Integer doInBackground(LocationJSON... params) {
         Integer result = FAILURE;
 
         try {
             int count = params.length;
             for (int i = 0; i < count; i++) {
-                JSONObject param = params[i];
+                LocationJSON param = params[i];
                 StringBuilder jsonPost = new StringBuilder();
-                Iterator keys = param.keys();
+                Iterator<String> keys = param.keys();
 
                 // Format LocationJSON argument for the POST method
                 // The format is: "key1=value1&key2=value2"
@@ -98,10 +98,12 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
         /* Sent LocationJson. Check for received confirmation */
 
         if(result == SUCCESS) {
-            getCallBack().success();
+            if (getCallBack() != null)
+                getCallBack().success();
         } else{
             Log.e(TAG, "Failed to confirm communication with server.");
-            getCallBack().failure();
+            if (getCallBack() != null)
+                getCallBack().failure();
         }
     }
 }
