@@ -1,8 +1,11 @@
-package cs5150athletetracking.com.athletetracking;
+package cs5150athletetracking.com.athletetracking.JSONFormats;
 
 
 import android.util.Log;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
@@ -10,6 +13,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class LocationJSON extends JSONObject {
+
+    private final String TAG = "LocationJSON";
+    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
+
     private enum SERIALIZE_KEY{
         USER, TIMESTAMP, LATITUDE, LONGITUDE, ALTITUDE;
 
@@ -32,11 +39,11 @@ public class LocationJSON extends JSONObject {
         }
     }
 
-    private final String TAG = "LocationJSON";
+    public LocationJSON(String username, double latitude,
+                        double longitude, double altitude){
 
-    public LocationJSON(String username, String timestamp,
-                        double latitude, double longitude,
-                        double altitude){
+        String timestamp = format.format(new Date());
+
         try {
             this.put(SERIALIZE_KEY.USER.toString(),     username);
             this.put(SERIALIZE_KEY.TIMESTAMP.toString(),timestamp);

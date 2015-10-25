@@ -13,11 +13,8 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -25,21 +22,32 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import cs5150athletetracking.com.athletetracking.LocationJSON;
+import cs5150athletetracking.com.athletetracking.JSONFormats.LocationJSON;
+import cs5150athletetracking.com.athletetracking.StatusCallback;
 import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
 public class LocationRecorder {
 
-    public static final int LOC_DATA_BATCH_SIZE = 100;
-
-    public enum LocationRecorderError {
-        NONE, PERMISSIONS, NO_PROVIDER /** maybe more later **/
-    }
-
-    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
     private static final String TAG = "LocationRecorder";
     private static final int NULL_LOC_SLEEP_PERIOD = 1000 * 2; // One minute //TODO change back
     private static final int REGULAR_SLEEP_PERIOD = 1000 * 5; // Five seconds
+    public static final int LOC_DATA_BATCH_SIZE = 5; //TODO 100
+
+    public enum LocationRecorderError {
+        NONE, PERMISSIONS, NO_PROVIDER; /** maybe more later **/
+
+        public String getErrorString(){
+            switch(this){
+                case PERMISSIONS:
+                    return "Insufficient permissions.";
+                case NO_PROVIDER:
+                    return "Unable to determine location";
+                default:
+                    return "No error";
+            }
+        }
+    }
+
 
     private final String username;
     private final List<JSONObject> locData;
@@ -48,10 +56,12 @@ public class LocationRecorder {
     private final ThreadPoolExecutor executor;
     private final Activity activity;
     private final LocationTracker locationTracker;
+    private final StatusCallback callback;
 
-    public LocationRecorder(String username, Activity activity) {
+    public LocationRecorder(String username, Activity activity, StatusCallback callback) {
         this.username = username;
         this.activity = activity;   //TODO this may cause problems. Let's be careful
+        this.callback = callback;
         this.locData = new ArrayList<>();
         this.paused = new AtomicBoolean(true);
         this.error = new AtomicReference<>(LocationRecorderError.NONE);
@@ -90,6 +100,7 @@ public class LocationRecorder {
                 fail(LocationRecorderError.PERMISSIONS, e);
             }
             executor.execute(new LocationRecorderRunnable());
+            callback.yellow("Beginning tracking...");
         }
     }
 
@@ -103,6 +114,7 @@ public class LocationRecorder {
 
     public void fail(LocationRecorderError error, Exception e){
         this.error.set(error);
+        setStatusRed(error.getErrorString());
         if (e != null) {
             Log.e(TAG, "Exception in Location Recorder", e);
         } else {
@@ -114,12 +126,45 @@ public class LocationRecorder {
         return error.get() != LocationRecorderError.NONE;
     }
 
+    // ALL UI code belongs on the main thread, hence this ugliness
+
+    private void setStatusGreen(final String message){
+        ThreadUtil.runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                callback.green(message);
+            }
+        });
+    }
+
+    private void setStatusYellow(final String message){
+        ThreadUtil.runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                callback.yellow(message);
+            }
+        });
+    }
+
+    private void setStatusRed(final String message){
+        ThreadUtil.runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                callback.red(message);
+            }
+        });
+    }
+
     protected class LocationRecorderRunnable implements Runnable {
 
         @Override
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
-//                uploadBatch();
+                if (uploadBatch()){
+                    setStatusGreen("Transmitting");
+                } else {
+                    setStatusYellow("Connection Interrupted. Retrying");
+                }
             }
             if (haveLocationPermission()) {
                 if (locationTracker.hasLocation()){
@@ -140,6 +185,10 @@ public class LocationRecorder {
             }
         }
 
+        private boolean uploadBatch(){
+            return true;
+        }
+
         private void scheduleNextIteration(long delay) {
             ThreadUtil.sleep(delay);
             executor.execute(this);
@@ -150,10 +199,8 @@ public class LocationRecorder {
             double latitude = loc.getLatitude();
             double longitude = loc.getLongitude();
             double altitude = loc.getAltitude();
-            String timestamp = format.format(new Date());
-            return new LocationJSON(username, timestamp,
-                                    latitude, longitude,
-                                    altitude);
+            return new LocationJSON(username, latitude,
+                                    longitude, altitude);
         }
 
         private boolean haveLocationPermission() {
