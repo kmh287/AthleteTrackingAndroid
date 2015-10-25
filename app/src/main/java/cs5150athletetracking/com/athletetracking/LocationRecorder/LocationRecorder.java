@@ -20,18 +20,26 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import cs5150athletetracking.com.athletetracking.JSONFormats.LocationJSON;
-import cs5150athletetracking.com.athletetracking.StatusCallback;
+import cs5150athletetracking.com.athletetracking.UIStatusCallback;
 import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
 public class LocationRecorder {
 
     private static final String TAG = "LocationRecorder";
+    //The amount of time the recorder should wait to get the location after unsuccessfully getting
+    // the location
     private static final int NULL_LOC_SLEEP_PERIOD = 1000 * 2; // One minute //TODO change back
+    // The amount of time the recorder should wait to get the location after successfully getting
+    // the location
     private static final int REGULAR_SLEEP_PERIOD = 1000 * 5; // Five seconds
-    public static final int LOC_DATA_BATCH_SIZE = 5; //TODO 100
+    // The number of location JSONs we intend to upload at once
+    private static final int LOC_DATA_BATCH_SIZE = 5; //TODO 100
+    // How many null locations will we accept before we indicate there's a problem
+    private static final int NULL_LOC_TOLERANCE = 2;
 
     public enum LocationRecorderError {
         NONE, PERMISSIONS, NO_PROVIDER; /** maybe more later **/
@@ -56,9 +64,12 @@ public class LocationRecorder {
     private final ThreadPoolExecutor executor;
     private final Activity activity;
     private final LocationTracker locationTracker;
-    private final StatusCallback callback;
+    // The callback for changing the status of the activity.
+    // Do not use the callback off of the UI thread! Use the methods in this class
+    // such as setStatusGreen(...) to ensure callback runs on the main thread.
+    private final UIStatusCallback callback;
 
-    public LocationRecorder(String username, Activity activity, StatusCallback callback) {
+    public LocationRecorder(String username, Activity activity, UIStatusCallback callback) {
         this.username = username;
         this.activity = activity;   //TODO this may cause problems. Let's be careful
         this.callback = callback;
@@ -100,7 +111,7 @@ public class LocationRecorder {
                 fail(LocationRecorderError.PERMISSIONS, e);
             }
             executor.execute(new LocationRecorderRunnable());
-            callback.yellow("Beginning tracking...");
+            callback.green("Beginning tracking...");
         }
     }
 
@@ -114,7 +125,7 @@ public class LocationRecorder {
 
     public void fail(LocationRecorderError error, Exception e){
         this.error.set(error);
-        setStatusRed(error.getErrorString());
+        callback.red(error.getErrorString());
         if (e != null) {
             Log.e(TAG, "Exception in Location Recorder", e);
         } else {
@@ -126,44 +137,18 @@ public class LocationRecorder {
         return error.get() != LocationRecorderError.NONE;
     }
 
-    // ALL UI code belongs on the main thread, hence this ugliness
-
-    private void setStatusGreen(final String message){
-        ThreadUtil.runOnMainThread(new Runnable() {
-            @Override
-            public void run() {
-                callback.green(message);
-            }
-        });
-    }
-
-    private void setStatusYellow(final String message){
-        ThreadUtil.runOnMainThread(new Runnable() {
-            @Override
-            public void run() {
-                callback.yellow(message);
-            }
-        });
-    }
-
-    private void setStatusRed(final String message){
-        ThreadUtil.runOnMainThread(new Runnable() {
-            @Override
-            public void run() {
-                callback.red(message);
-            }
-        });
-    }
-
     protected class LocationRecorderRunnable implements Runnable {
+
+        private AtomicInteger nullLocCounter = new AtomicInteger(0);
 
         @Override
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
+                //TODO replace with async upload
                 if (uploadBatch()){
-                    setStatusGreen("Transmitting");
+                    callback.green("Transmitting");
                 } else {
-                    setStatusYellow("Connection Interrupted. Retrying");
+                    callback.yellow("Connection Interrupted. Retrying");
                 }
             }
             if (haveLocationPermission()) {
@@ -173,10 +158,15 @@ public class LocationRecorder {
                     locData.add(json);
                     Log.i("LOCATIONRECORDER", json.toString());
                     if (!paused.get()) {
+                        nullLocCounter.set(0);
+                        callback.green("Transmitting");
                         scheduleNextIteration(REGULAR_SLEEP_PERIOD);
                     }
                 } else {
                     if (!paused.get()) {
+                        if(nullLocCounter.incrementAndGet() > NULL_LOC_TOLERANCE){
+                            callback.yellow("Location Unavailable");
+                        }
                         scheduleNextIteration(NULL_LOC_SLEEP_PERIOD);
                     }
                 }

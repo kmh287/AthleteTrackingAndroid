@@ -1,6 +1,5 @@
 package cs5150athletetracking.com.athletetracking;
 
-import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -35,7 +34,7 @@ public class TrackingActivity extends AppCompatActivity {
     }
 
     private LocationRecorder locRecorder;
-    private final AtomicReference<Status> status = new AtomicReference<>(Status.YELLOW);
+    private final AtomicReference<Status> status = new AtomicReference<>(Status.RED);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +51,7 @@ public class TrackingActivity extends AppCompatActivity {
 
         final Button statusBar = (Button) findViewById(R.id.status_button);
 
-        final StatusCallback callback = new TrackingStatusCallback(statusBar);
+        final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
 
         final Button trackingButton = (Button) findViewById(R.id.trackingButton);
         trackingButton.setOnClickListener(new View.OnClickListener() {
@@ -72,7 +71,7 @@ public class TrackingActivity extends AppCompatActivity {
         // TODO
     }
 
-    private class TrackingStatusCallback implements StatusCallback {
+    private class TrackingStatusCallback extends UIStatusCallback {
         private final Button statusBar;
 
         public TrackingStatusCallback(Button statusBar) {
@@ -80,7 +79,7 @@ public class TrackingActivity extends AppCompatActivity {
         }
 
         @Override
-        public void green(String message) {
+        public void greenCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.transmitting, null));
             } else{
@@ -91,8 +90,7 @@ public class TrackingActivity extends AppCompatActivity {
         }
 
         @Override
-        @TargetApi(Build.VERSION_CODES.M)
-        public void yellow(String message) {
+        public void yellowCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.disconnected, null));
             } else {
@@ -103,7 +101,7 @@ public class TrackingActivity extends AppCompatActivity {
         }
 
         @Override
-        public void red(String message) {
+        public void redCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.cornellRedDark, null));
             } else{
