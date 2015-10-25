@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +52,6 @@ public class LocationRecorder {
 
     private final String username;
     private final List<JSONObject> locData;
-    private final AtomicBoolean paused;
     private final AtomicReference<LocationRecorderError> error;
     private final ThreadPoolExecutor executor;
     private final Activity activity;
@@ -63,7 +63,6 @@ public class LocationRecorder {
         this.activity = activity;   //TODO this may cause problems. Let's be careful
         this.callback = callback;
         this.locData = new ArrayList<>();
-        this.paused = new AtomicBoolean(true);
         this.error = new AtomicReference<>(LocationRecorderError.NONE);
         this.executor = getSingleThreadedThreadPoolExecutor();
         this.locationTracker = getLocationTracker();
@@ -93,19 +92,14 @@ public class LocationRecorder {
 
     public void start() {
         if (!hasError()) {
-            paused.set(false);
             try {
                 locationTracker.start();
             } catch (SecurityException e) {
                 fail(LocationRecorderError.PERMISSIONS, e);
             }
             executor.execute(new LocationRecorderRunnable());
-            callback.yellow("Beginning tracking...");
+            callback.green("Beginning tracking...");
         }
-    }
-
-    public void pause() {
-        paused.set(true);
     }
 
     public void fail(LocationRecorderError error){
@@ -172,13 +166,9 @@ public class LocationRecorder {
                     LocationJSON json = getLocationJSON(loc);
                     locData.add(json);
                     Log.i("LOCATIONRECORDER", json.toString());
-                    if (!paused.get()) {
-                        scheduleNextIteration(REGULAR_SLEEP_PERIOD);
-                    }
+                    scheduleNextIteration(REGULAR_SLEEP_PERIOD);
                 } else {
-                    if (!paused.get()) {
-                        scheduleNextIteration(NULL_LOC_SLEEP_PERIOD);
-                    }
+                    scheduleNextIteration(NULL_LOC_SLEEP_PERIOD);
                 }
             } else {
                 fail(LocationRecorderError.PERMISSIONS);
@@ -190,8 +180,10 @@ public class LocationRecorder {
         }
 
         private void scheduleNextIteration(long delay) {
-            ThreadUtil.sleep(delay);
-            executor.execute(this);
+            if (!Thread.currentThread().isInterrupted()) {
+                ThreadUtil.sleep(delay);
+                executor.execute(this);
+            }
         }
 
         @NonNull

@@ -1,6 +1,7 @@
 package cs5150athletetracking.com.athletetracking;
 
 import android.annotation.TargetApi;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -10,6 +11,7 @@ import android.widget.Button;
 import java.util.concurrent.atomic.AtomicReference;
 
 import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecorder;
+import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
 
 public class TrackingActivity extends AppCompatActivity {
 
@@ -35,7 +37,8 @@ public class TrackingActivity extends AppCompatActivity {
     }
 
     private LocationRecorder locRecorder;
-    private final AtomicReference<Status> status = new AtomicReference<>(Status.YELLOW);
+    private final AtomicReference<Status> status = new AtomicReference<>(Status.RED);
+    private final AtomicReference<String> username = new AtomicReference<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +51,7 @@ public class TrackingActivity extends AppCompatActivity {
         if (username.get().equals("")){
             throw new RuntimeException("Username not passed through correctly:" + username);
         }
+        this.username.set(username.get());
         setContentView(R.layout.activity_tracking);
 
         final Button statusBar = (Button) findViewById(R.id.status_button);
@@ -58,18 +62,58 @@ public class TrackingActivity extends AppCompatActivity {
         trackingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (locRecorder == null || locRecorder.hasError()) {
-                    locRecorder = new LocationRecorder(username.get(), TrackingActivity.this, callback);
-                    locRecorder.start();
-                    trackingButton.setVisibility(View.INVISIBLE);
-                }
+                createLocationRecorder(username.get(), callback, trackingButton);
             }
         });
     }
 
+    private void createLocationRecorder(String username, StatusCallback callback, Button trackingButton) {
+        if (locRecorder == null || locRecorder.hasError()) {
+            locRecorder = new LocationRecorder(username, TrackingActivity.this, callback);
+            locRecorder.start();
+            trackingButton.setVisibility(View.INVISIBLE);
+        }
+    }
+
     @Override
-    protected void onSaveInstanceState(Bundle bundle){
-        // TODO
+    protected void onPause(){
+        super.onPause();
+        PreferenceUtil.writeToPrefs(getPrefs(), "locationTrackerStatus", status.get().ordinal());
+        PreferenceUtil.writeToPrefs(getPrefs(), "username", username.get());
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        SharedPreferences prefs = getPrefs();
+        int statusInt = PreferenceUtil.readPrefs(prefs, "locationTrackerStatus", -1);
+        String username = PreferenceUtil.readPrefs(prefs, "username", "");
+        PreferenceUtil.clearPrefs(prefs);
+        if (statusInt == -1){
+            return;
+        }
+        if ("".equals(username)){
+            finish(); // User needs to login again. Ideally this never happens
+        }
+        Status restoredStatus =  Status.values()[statusInt];
+        status.set(restoredStatus);
+
+        final Button statusBar = (Button) findViewById(R.id.status_button);
+        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
+        final StatusCallback callback = new TrackingStatusCallback(statusBar);
+
+        if (!restoredStatus.equals(Status.RED)){
+            createLocationRecorder(username, callback, trackingButton);
+        }
+    }
+
+    @Override
+    public void onBackPressed(){
+        //Sorry, you can't leave this activity. Muhahahahaha
+    }
+
+    private SharedPreferences getPrefs(){
+        return getSharedPreferences("RNRPrefs", MODE_PRIVATE);
     }
 
     private class TrackingStatusCallback implements StatusCallback {
