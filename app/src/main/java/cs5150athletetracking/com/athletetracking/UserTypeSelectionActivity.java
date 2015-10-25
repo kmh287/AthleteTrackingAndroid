@@ -23,7 +23,7 @@ public class UserTypeSelectionActivity extends AppCompatActivity {
         spectatorButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(UserTypeSelectionActivity.this, WebViewActivity.class);
+                Intent intent = new Intent(UserTypeSelectionActivity.this, SpectatorActivity.class);
                 intent.putExtra("reqType", 1 /*spectator */);
                 startActivity(intent);
             }
