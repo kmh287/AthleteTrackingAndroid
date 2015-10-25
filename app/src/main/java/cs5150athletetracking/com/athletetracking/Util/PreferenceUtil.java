@@ -27,8 +27,8 @@ public class PreferenceUtil {
         return prefs.getString(key, fallback);
     }
 
-    public static void clearPrefs(SharedPreferences prefs){
-        prefs.edit().clear().commit();
+    public static void clearPref(SharedPreferences prefs, String key){
+        prefs.edit().remove(key).commit();
     }
 
 }

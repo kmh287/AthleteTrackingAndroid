@@ -1,6 +1,5 @@
 package cs5150athletetracking.com.athletetracking;
 
-import android.annotation.TargetApi;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,6 +13,9 @@ import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecord
 import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
 
 public class TrackingActivity extends AppCompatActivity {
+
+    public static final String LOCATION_TRACKER_STATUS_PREF = "locationTrackerStatus";
+    public static final String USERNAME_PREF = "username";
 
     private enum Status{
         /**
@@ -86,9 +88,10 @@ public class TrackingActivity extends AppCompatActivity {
     protected void onResume(){
         super.onResume();
         SharedPreferences prefs = getPrefs();
-        int statusInt = PreferenceUtil.readPrefs(prefs, "locationTrackerStatus", -1);
-        String username = PreferenceUtil.readPrefs(prefs, "username", "");
-        PreferenceUtil.clearPrefs(prefs);
+        int statusInt = PreferenceUtil.readPrefs(prefs, LOCATION_TRACKER_STATUS_PREF, -1);
+        String username = PreferenceUtil.readPrefs(prefs, USERNAME_PREF, "");
+        PreferenceUtil.clearPref(prefs, LOCATION_TRACKER_STATUS_PREF);
+        PreferenceUtil.clearPref(prefs, USERNAME_PREF);
         if (statusInt == -1){
             return;
         }
@@ -123,6 +126,7 @@ public class TrackingActivity extends AppCompatActivity {
             this.statusBar = statusBar;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void green(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -134,8 +138,8 @@ public class TrackingActivity extends AppCompatActivity {
             status.set(Status.GREEN);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
-        @TargetApi(Build.VERSION_CODES.M)
         public void yellow(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.disconnected, null));
@@ -146,6 +150,7 @@ public class TrackingActivity extends AppCompatActivity {
             status.set(Status.YELLOW);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void red(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
