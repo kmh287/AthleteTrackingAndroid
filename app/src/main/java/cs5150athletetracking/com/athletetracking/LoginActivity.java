@@ -29,9 +29,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
+import cs5150athletetracking.com.athletetracking.JSONFormats.LoginJSON;
 import io.testfire.Testfire;
 import io.testfire.TestfireParamCrashReporting;
 import io.testfire.TestfireParamGesture;
@@ -108,6 +115,16 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        Button registerButton = (Button) findViewById(R.id.register_button);
+        registerButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LoginActivity.this, WebViewActivity.class);
+                intent.putExtra("reqType", 0 /* register */);
+                startActivity(intent);
+            }
+        });
     }
 
     private void startTestfire(){
@@ -331,23 +348,36 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         private final String mEmail;
         private final String mPassword;
+        private final ThreadPoolExecutor executor;
 
         UserLoginTask(String email, String password) {
             mEmail = email;
             mPassword = password;
+            executor = getSingleThreadedThreadPoolExecutor();
+        }
+
+        private ThreadPoolExecutor getSingleThreadedThreadPoolExecutor() {
+            return new ThreadPoolExecutor(1, 1, 30, TimeUnit.SECONDS,
+                                          new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
         }
 
         @Override
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
-            try {
-                // Simulate network access.
-                //TODO replace with backend connection
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
+//            try {
+//                // Simulate network access.
+//                LoginJSON login = new LoginJSON(mEmail, mPassword);
+//                Uploader uploader = new Uploader();
+//                int res = uploader.upload(login);
+//                if (res > 0){
+//                    String reply = uploader.getResponse();
+//                    return "OK".equals(reply);
+//                }
+//            } catch (JSONException e){
+//                return false;
+//            }
+
 
             for (String credential : DUMMY_CREDENTIALS) {
                 String[] pieces = credential.split(":");
@@ -368,7 +398,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
-                startActivity(new Intent(LoginActivity.this, TrackingActivity.class));
+                Intent trackingIntent = new Intent(LoginActivity.this, TrackingActivity.class);
+                trackingIntent.putExtra("username", mEmail);
+                startActivity(trackingIntent);
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();

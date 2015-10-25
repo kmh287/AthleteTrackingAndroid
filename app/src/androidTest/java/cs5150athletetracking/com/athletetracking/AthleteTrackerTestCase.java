@@ -3,6 +3,7 @@ package cs5150athletetracking.com.athletetracking;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
+import static org.mockito.Mockito.*;
 
 public class AthleteTrackerTestCase extends ApplicationTestCase<Application> {
 
@@ -21,6 +22,8 @@ public class AthleteTrackerTestCase extends ApplicationTestCase<Application> {
 
     @Override
     protected void tearDown() throws Exception {
+        // super.tearDown() will use reflection to null out all fields. If for any reason
+        // we have any objects that need manual cleanup, do that before calling super.
         super.tearDown();
     }
 }
