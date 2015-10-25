@@ -28,20 +28,14 @@ public class Uploader {
         Integer result = FAILURE;
 
         try {
-            StringBuilder jsonPost = new StringBuilder();
-
-            // Format LocationJSON argument for the POST method
-            // The format is: "key1=value1&key2=value2"
-            jsonPost.append(URLEncoder.encode(INPUT_LABEL, "UTF-8"));
-            jsonPost.append('=');
-            jsonPost.append(json.toString());
-
-            byte[] jsonPostBytes = jsonPost.toString().getBytes("UTF-8");
+            byte[] jsonPostBytes = (URLEncoder.encode(INPUT_LABEL, "UTF-8") + '=' +
+                    json.toString()).getBytes("UTF-8");
 
             // Open up a connection, create appropriate header, and send request
             URL url = new URL(URL_STRING);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setDoOutput(true);
+            urlConnection.setConnectTimeout(1000*10 /* ten seconds */);
             urlConnection.setRequestMethod("POST");
             urlConnection.setRequestProperty("Content-Type", "application/json");
             urlConnection.setRequestProperty("Content-Length", String.valueOf(jsonPostBytes.length));
