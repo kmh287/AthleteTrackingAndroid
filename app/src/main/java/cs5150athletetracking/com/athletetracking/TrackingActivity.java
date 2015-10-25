@@ -35,7 +35,7 @@ public class TrackingActivity extends AppCompatActivity {
     }
 
     private LocationRecorder locRecorder;
-    private AtomicReference<Status> status = new AtomicReference<>(Status.YELLOW);
+    private final AtomicReference<Status> status = new AtomicReference<>(Status.YELLOW);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +87,7 @@ public class TrackingActivity extends AppCompatActivity {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.transmitting));
             }
             statusBar.setText(message);
+            status.set(Status.GREEN);
         }
 
         @Override
@@ -98,6 +99,7 @@ public class TrackingActivity extends AppCompatActivity {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.disconnected));
             }
             statusBar.setText(message);
+            status.set(Status.YELLOW);
         }
 
         @Override
@@ -108,6 +110,7 @@ public class TrackingActivity extends AppCompatActivity {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.cornellRedDark));
             }
             statusBar.setText(message);
+            status.set(Status.RED);
         }
     }
 }
