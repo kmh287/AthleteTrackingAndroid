@@ -42,11 +42,6 @@ public class TrackingActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (locRecorder == null || locRecorder.hasError()) {
-
-                    if (attemptConnection()){
-                        callback.disconnected("Attempting Upload");
-                    }
-
                     locRecorder = new LocationRecorder(username.get(), TrackingActivity.this, callback);
                     locRecorder.start();
                     trackingButton.setVisibility(View.INVISIBLE);
@@ -60,10 +55,6 @@ public class TrackingActivity extends AppCompatActivity {
         // TODO
     }
 
-    private boolean attemptConnection(){
-        return true;    //TODO obviously fill in
-    }
-
     private class TrackingStatusCallback implements StatusCallback {
         private final Button statusBar;
 
@@ -72,7 +63,7 @@ public class TrackingActivity extends AppCompatActivity {
         }
 
         @Override
-        public void transmitting(String message) {
+        public void green(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.transmitting, null));
             } else{
@@ -83,7 +74,7 @@ public class TrackingActivity extends AppCompatActivity {
 
         @Override
         @TargetApi(Build.VERSION_CODES.M)
-        public void disconnected(String message) {
+        public void yellow(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.disconnected, null));
             } else {
@@ -93,7 +84,7 @@ public class TrackingActivity extends AppCompatActivity {
         }
 
         @Override
-        public void error(String message) {
+        public void red(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.cornellRedDark, null));
             } else{

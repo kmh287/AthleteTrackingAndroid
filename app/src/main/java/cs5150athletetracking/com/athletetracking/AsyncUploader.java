@@ -18,15 +18,15 @@ import org.json.JSONObject;
 
 public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
 
-    private static final String INPUT_LABEL = "params";
-    private static final String TAG = "Http Connection";
-    private static final String URL_STRING = "http://ec2-54-165-208-160.compute-1.amazonaws.com/php/test_server.php";
-    private static final int END_OF_STREAM = -1;
-    private static final int HTTP_OK = 200;
-    private static final int SUCCESS = 1;
-    private static final int FAILURE = -1;
+    private static final String TAG = "AsyncUploader";
 
     private ResultCallable callBack;
+    private final Uploader uploader;
+
+    public AsyncUploader(){
+        this.uploader = new Uploader();
+    }
+
 
     public void setCallBack(ResultCallable callBack) {
         this.callBack = callBack;
@@ -38,50 +38,11 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
 
     @Override
     protected Integer doInBackground(JSONObject... params) {
-        Integer result = FAILURE;
+        int result = 0;
 
-        try {
-            int count = params.length;
-            for (int i = 0; i < count; i++) {
-                JSONObject param = params[i];
-                StringBuilder jsonPost = new StringBuilder();
-
-                // Format LocationJSON argument for the POST method
-                // The format is: "key1=value1&key2=value2"
-                jsonPost.append(URLEncoder.encode(INPUT_LABEL, "UTF-8"));
-                jsonPost.append('=');
-                jsonPost.append(param.toString());
-
-                byte[] jsonPostBytes = jsonPost.toString().getBytes("UTF-8");
-
-                // Open up a connection, create appropriate header, and send request
-                URL url = new URL(URL_STRING);
-                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setDoOutput(true);
-                urlConnection.setRequestMethod("POST");
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty("Content-Length", String.valueOf(jsonPostBytes.length));
-                urlConnection.setDoOutput(true);
-                urlConnection.getOutputStream().write(jsonPostBytes);
-
-                int statusCode = urlConnection.getResponseCode();
-
-                if (statusCode == HTTP_OK) {
-                    String message = new String();
-
-                    Reader in = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), "UTF-8"));
-                    for ( int c = in.read(); c != END_OF_STREAM; c = in.read() )
-                        message += (char)c;
-
-                    Log.d(TAG, message);
-                    result = SUCCESS;
-                } else {
-                    result = FAILURE;
-                    Log.e(TAG, "HTTP Response Code Not OK");
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, e.getLocalizedMessage());
+        int count = params.length;
+        for (JSONObject param : params) {
+            result += uploader.upload(param);
         }
 
         return result;
@@ -92,10 +53,11 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
     protected void onPostExecute(Integer result) {
         /* Sent LocationJson. Check for received confirmation */
 
-        if(result == SUCCESS) {
+        //TODO fix?
+        if(result > 0) {
             if (getCallBack() != null)
                 getCallBack().success();
-        } else{
+        } else {
             Log.e(TAG, "Failed to confirm communication with server.");
             if (getCallBack() != null)
                 getCallBack().failure();

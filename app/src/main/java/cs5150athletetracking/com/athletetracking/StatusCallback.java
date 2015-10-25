@@ -5,8 +5,8 @@ package cs5150athletetracking.com.athletetracking;
  */
 public interface StatusCallback {
 
-    public void transmitting(String message);
-    public void disconnected (String message);
-    public void error(String message);
+    public void green(String message);
+    public void yellow(String message);
+    public void red(String message);
 
 }

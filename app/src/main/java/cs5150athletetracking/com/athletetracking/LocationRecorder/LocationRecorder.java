@@ -8,18 +8,13 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -27,12 +22,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import cs5150athletetracking.com.athletetracking.LocationJSON;
+import cs5150athletetracking.com.athletetracking.JSONFormats.LocationJSON;
 import cs5150athletetracking.com.athletetracking.StatusCallback;
 import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
 public class LocationRecorder {
 
+    private static final String TAG = "LocationRecorder";
+    private static final int NULL_LOC_SLEEP_PERIOD = 1000 * 2; // One minute //TODO change back
+    private static final int REGULAR_SLEEP_PERIOD = 1000 * 5; // Five seconds
     public static final int LOC_DATA_BATCH_SIZE = 5; //TODO 100
 
     public enum LocationRecorderError {
@@ -50,10 +48,6 @@ public class LocationRecorder {
         }
     }
 
-    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
-    private static final String TAG = "LocationRecorder";
-    private static final int NULL_LOC_SLEEP_PERIOD = 1000 * 2; // One minute //TODO change back
-    private static final int REGULAR_SLEEP_PERIOD = 1000 * 5; // Five seconds
 
     private final String username;
     private final List<JSONObject> locData;
@@ -106,6 +100,7 @@ public class LocationRecorder {
                 fail(LocationRecorderError.PERMISSIONS, e);
             }
             executor.execute(new LocationRecorderRunnable());
+            callback.yellow("Beginning tracking...");
         }
     }
 
@@ -119,7 +114,7 @@ public class LocationRecorder {
 
     public void fail(LocationRecorderError error, Exception e){
         this.error.set(error);
-        setStatusError(error.getErrorString());
+        setStatusRed(error.getErrorString());
         if (e != null) {
             Log.e(TAG, "Exception in Location Recorder", e);
         } else {
@@ -133,29 +128,29 @@ public class LocationRecorder {
 
     // ALL UI code belongs on the main thread, hence this ugliness
 
-    private void setStatusTransmitting(final String message){
+    private void setStatusGreen(final String message){
         ThreadUtil.runOnMainThread(new Runnable() {
             @Override
             public void run() {
-                callback.transmitting(message);
+                callback.green(message);
             }
         });
     }
 
-    private void setStatusDisconnected(final String message){
+    private void setStatusYellow(final String message){
         ThreadUtil.runOnMainThread(new Runnable() {
             @Override
             public void run() {
-                callback.disconnected(message);
+                callback.yellow(message);
             }
         });
     }
 
-    private void setStatusError(final String message){
+    private void setStatusRed(final String message){
         ThreadUtil.runOnMainThread(new Runnable() {
             @Override
             public void run() {
-                callback.error(message);
+                callback.red(message);
             }
         });
     }
@@ -166,9 +161,9 @@ public class LocationRecorder {
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
                 if (uploadBatch()){
-                    setStatusTransmitting("Transmitting");
+                    setStatusGreen("Transmitting");
                 } else {
-                    setStatusDisconnected("Connection Interrupted. Retrying");
+                    setStatusYellow("Connection Interrupted. Retrying");
                 }
             }
             if (haveLocationPermission()) {
@@ -204,10 +199,8 @@ public class LocationRecorder {
             double latitude = loc.getLatitude();
             double longitude = loc.getLongitude();
             double altitude = loc.getAltitude();
-            String timestamp = format.format(new Date());
-            return new LocationJSON(username, timestamp,
-                                    latitude, longitude,
-                                    altitude);
+            return new LocationJSON(username, latitude,
+                                    longitude, altitude);
         }
 
         private boolean haveLocationPermission() {
