@@ -13,12 +13,29 @@ import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecord
 
 public class TrackingActivity extends AppCompatActivity {
 
-    private enum STATUS{
-        DISCONNECTED, /*red */
-        TRANSMITTING /* green */
+    private enum Status{
+        /**
+         * The user hasn't selected a race yet, an error has destroyed the location recorder.
+         * The status should ONLY be red at the very beginning before recording starts, or if
+         * we've encountered an unrecoverable error.
+         */
+        RED,
+        /**
+         * The user has just started recording but hasn't uploaded yet, or the last upload to the
+         * server didn't succeed. The status should ONLY be yellow if we are in a recoverable error
+         * state. (Upload problems are considered resolved when the next upload succeeds)
+         */
+        YELLOW,
+        /**
+         * The user has been recording for enough time to trigger an upload and uploads are going
+         * through normally. We may need to tweak this to provide a better user experience. The
+         * status should ONLY be green if our most recent connection to the server succeeded.
+         */
+        GREEN
     }
 
     private LocationRecorder locRecorder;
+    private AtomicReference<Status> status = new AtomicReference<>(Status.YELLOW);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
