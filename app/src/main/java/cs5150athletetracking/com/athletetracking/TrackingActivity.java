@@ -58,7 +58,7 @@ public class TrackingActivity extends AppCompatActivity {
 
         final Button statusBar = (Button) findViewById(R.id.status_button);
 
-        final StatusCallback callback = new TrackingStatusCallback(statusBar);
+        final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
 
         final Button trackingButton = (Button) findViewById(R.id.trackingButton);
         trackingButton.setOnClickListener(new View.OnClickListener() {
@@ -69,7 +69,7 @@ public class TrackingActivity extends AppCompatActivity {
         });
     }
 
-    private void createLocationRecorder(String username, StatusCallback callback, Button trackingButton) {
+    private void createLocationRecorder(String username, UIStatusCallback callback, Button trackingButton) {
         if (locRecorder == null || locRecorder.hasError()) {
             locRecorder = new LocationRecorder(username, TrackingActivity.this, callback);
             locRecorder.start();
@@ -103,7 +103,7 @@ public class TrackingActivity extends AppCompatActivity {
 
         final Button statusBar = (Button) findViewById(R.id.status_button);
         final Button trackingButton = (Button) findViewById(R.id.trackingButton);
-        final StatusCallback callback = new TrackingStatusCallback(statusBar);
+        final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
 
         if (!restoredStatus.equals(Status.RED)){
             createLocationRecorder(username, callback, trackingButton);
@@ -119,7 +119,7 @@ public class TrackingActivity extends AppCompatActivity {
         return getSharedPreferences("RNRPrefs", MODE_PRIVATE);
     }
 
-    private class TrackingStatusCallback implements StatusCallback {
+    private class TrackingStatusCallback extends UIStatusCallback {
         private final Button statusBar;
 
         public TrackingStatusCallback(Button statusBar) {
@@ -128,7 +128,7 @@ public class TrackingActivity extends AppCompatActivity {
 
         @SuppressWarnings("deprecation")
         @Override
-        public void green(String message) {
+        public void greenCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.transmitting, null));
             } else{
@@ -140,7 +140,7 @@ public class TrackingActivity extends AppCompatActivity {
 
         @SuppressWarnings("deprecation")
         @Override
-        public void yellow(String message) {
+        public void yellowCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.disconnected, null));
             } else {
@@ -152,7 +152,7 @@ public class TrackingActivity extends AppCompatActivity {
 
         @SuppressWarnings("deprecation")
         @Override
-        public void red(String message) {
+        public void redCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.cornellRedDark, null));
             } else{

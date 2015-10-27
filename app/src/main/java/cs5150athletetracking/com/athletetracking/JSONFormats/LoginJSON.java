@@ -1,8 +1,6 @@
 package cs5150athletetracking.com.athletetracking.JSONFormats;
 
 
-import android.util.Log;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
