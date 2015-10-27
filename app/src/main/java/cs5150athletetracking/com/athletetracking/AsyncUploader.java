@@ -3,12 +3,6 @@ package cs5150athletetracking.com.athletetracking;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import java.io.*;
-import java.net.URL;
-import java.net.HttpURLConnection;
-import java.net.URLEncoder;
-import java.util.Iterator;
-
 import org.json.JSONObject;
 
 

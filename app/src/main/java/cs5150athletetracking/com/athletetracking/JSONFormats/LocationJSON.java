@@ -3,14 +3,12 @@ package cs5150athletetracking.com.athletetracking.JSONFormats;
 
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Map;
-import java.util.LinkedHashMap;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class LocationJSON extends JSONObject {
 

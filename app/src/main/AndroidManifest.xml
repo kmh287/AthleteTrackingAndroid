@@ -29,7 +29,8 @@
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
-        <activity android:name=".TrackingActivity" >
+        <activity android:name=".TrackingActivity" android:screenOrientation="portrait">>
+
         </activity>
         <activity android:name=".UserTypeSelectionActivity" >
             <intent-filter>
@@ -38,7 +39,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".WebViewActivity" >
+        <activity android:name=".SpectatorActivity" >
         </activity>
     </application>
 

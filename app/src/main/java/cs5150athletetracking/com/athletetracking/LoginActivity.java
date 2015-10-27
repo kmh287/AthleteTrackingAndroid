@@ -29,8 +29,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import org.json.JSONException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -38,7 +36,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import cs5150athletetracking.com.athletetracking.JSONFormats.LoginJSON;
 import io.testfire.Testfire;
 import io.testfire.TestfireParamCrashReporting;
 import io.testfire.TestfireParamGesture;
@@ -61,6 +58,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Id to identity READ_CONTACTS permission request.
      */
     private static final int REQUEST_READ_CONTACTS = 0;
+
+    /**
+     * URL to registration page
+     */
+    private static final String REGISTRATION_URL = "http://www.google.com"; //TODO change, obviously
 
     /**
      * A dummy authentication store containing known user names and passwords.
@@ -120,8 +122,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         registerButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(LoginActivity.this, WebViewActivity.class);
-                intent.putExtra("reqType", 0 /* register */);
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(REGISTRATION_URL));
                 startActivity(intent);
             }
         });

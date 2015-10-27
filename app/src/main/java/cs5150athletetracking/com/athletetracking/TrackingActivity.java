@@ -1,5 +1,6 @@
 package cs5150athletetracking.com.athletetracking;
 
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -9,8 +10,12 @@ import android.widget.Button;
 import java.util.concurrent.atomic.AtomicReference;
 
 import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecorder;
+import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
 
 public class TrackingActivity extends AppCompatActivity {
+
+    public static final String LOCATION_TRACKER_STATUS_PREF = "locationTrackerStatus";
+    public static final String USERNAME_PREF = "username";
 
     private enum Status{
         /**
@@ -35,6 +40,7 @@ public class TrackingActivity extends AppCompatActivity {
 
     private LocationRecorder locRecorder;
     private final AtomicReference<Status> status = new AtomicReference<>(Status.RED);
+    private final AtomicReference<String> username = new AtomicReference<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +53,7 @@ public class TrackingActivity extends AppCompatActivity {
         if (username.get().equals("")){
             throw new RuntimeException("Username not passed through correctly:" + username);
         }
+        this.username.set(username.get());
         setContentView(R.layout.activity_tracking);
 
         final Button statusBar = (Button) findViewById(R.id.status_button);
@@ -57,18 +64,59 @@ public class TrackingActivity extends AppCompatActivity {
         trackingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (locRecorder == null || locRecorder.hasError()) {
-                    locRecorder = new LocationRecorder(username.get(), TrackingActivity.this, callback);
-                    locRecorder.start();
-                    trackingButton.setVisibility(View.INVISIBLE);
-                }
+                createLocationRecorder(username.get(), callback, trackingButton);
             }
         });
     }
 
+    private void createLocationRecorder(String username, UIStatusCallback callback, Button trackingButton) {
+        if (locRecorder == null || locRecorder.hasError()) {
+            locRecorder = new LocationRecorder(username, TrackingActivity.this, callback);
+            locRecorder.start();
+            trackingButton.setVisibility(View.INVISIBLE);
+        }
+    }
+
     @Override
-    protected void onSaveInstanceState(Bundle bundle){
-        // TODO
+    protected void onPause(){
+        super.onPause();
+        PreferenceUtil.writeToPrefs(getPrefs(), "locationTrackerStatus", status.get().ordinal());
+        PreferenceUtil.writeToPrefs(getPrefs(), "username", username.get());
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        SharedPreferences prefs = getPrefs();
+        int statusInt = PreferenceUtil.readPrefs(prefs, LOCATION_TRACKER_STATUS_PREF, -1);
+        String username = PreferenceUtil.readPrefs(prefs, USERNAME_PREF, "");
+        PreferenceUtil.clearPref(prefs, LOCATION_TRACKER_STATUS_PREF);
+        PreferenceUtil.clearPref(prefs, USERNAME_PREF);
+        if (statusInt == -1){
+            return;
+        }
+        if ("".equals(username)){
+            finish(); // User needs to login again. Ideally this never happens
+        }
+        Status restoredStatus =  Status.values()[statusInt];
+        status.set(restoredStatus);
+
+        final Button statusBar = (Button) findViewById(R.id.status_button);
+        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
+        final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
+
+        if (!restoredStatus.equals(Status.RED)){
+            createLocationRecorder(username, callback, trackingButton);
+        }
+    }
+
+    @Override
+    public void onBackPressed(){
+        //Sorry, you can't leave this activity. Muhahahahaha
+    }
+
+    private SharedPreferences getPrefs(){
+        return getSharedPreferences("RNRPrefs", MODE_PRIVATE);
     }
 
     private class TrackingStatusCallback extends UIStatusCallback {
@@ -78,6 +126,7 @@ public class TrackingActivity extends AppCompatActivity {
             this.statusBar = statusBar;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void greenCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -89,6 +138,7 @@ public class TrackingActivity extends AppCompatActivity {
             status.set(Status.GREEN);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void yellowCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -100,6 +150,7 @@ public class TrackingActivity extends AppCompatActivity {
             status.set(Status.YELLOW);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void redCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

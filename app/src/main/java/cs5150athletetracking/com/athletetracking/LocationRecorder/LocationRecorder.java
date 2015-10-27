@@ -19,7 +19,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,7 +58,6 @@ public class LocationRecorder {
 
     private final String username;
     private final List<JSONObject> locData;
-    private final AtomicBoolean paused;
     private final AtomicReference<LocationRecorderError> error;
     private final ThreadPoolExecutor executor;
     private final Activity activity;
@@ -74,7 +72,6 @@ public class LocationRecorder {
         this.activity = activity;   //TODO this may cause problems. Let's be careful
         this.callback = callback;
         this.locData = new ArrayList<>();
-        this.paused = new AtomicBoolean(true);
         this.error = new AtomicReference<>(LocationRecorderError.NONE);
         this.executor = getSingleThreadedThreadPoolExecutor();
         this.locationTracker = getLocationTracker();
@@ -104,7 +101,6 @@ public class LocationRecorder {
 
     public void start() {
         if (!hasError()) {
-            paused.set(false);
             try {
                 locationTracker.start();
             } catch (SecurityException e) {
@@ -113,10 +109,6 @@ public class LocationRecorder {
             executor.execute(new LocationRecorderRunnable());
             callback.green("Beginning tracking...");
         }
-    }
-
-    public void pause() {
-        paused.set(true);
     }
 
     public void fail(LocationRecorderError error){
@@ -157,18 +149,14 @@ public class LocationRecorder {
                     LocationJSON json = getLocationJSON(loc);
                     locData.add(json);
                     Log.i("LOCATIONRECORDER", json.toString());
-                    if (!paused.get()) {
-                        nullLocCounter.set(0);
-                        callback.green("Transmitting");
-                        scheduleNextIteration(REGULAR_SLEEP_PERIOD);
-                    }
+                    nullLocCounter.set(0);
+                    callback.green("Transmitting");
+                    scheduleNextIteration(REGULAR_SLEEP_PERIOD);
                 } else {
-                    if (!paused.get()) {
-                        if(nullLocCounter.incrementAndGet() > NULL_LOC_TOLERANCE){
-                            callback.yellow("Location Unavailable");
-                        }
-                        scheduleNextIteration(NULL_LOC_SLEEP_PERIOD);
+                    if(nullLocCounter.incrementAndGet() > NULL_LOC_TOLERANCE){
+                        callback.yellow("Location Unavailable");
                     }
+                    scheduleNextIteration(NULL_LOC_SLEEP_PERIOD);
                 }
             } else {
                 fail(LocationRecorderError.PERMISSIONS);
@@ -180,8 +168,10 @@ public class LocationRecorder {
         }
 
         private void scheduleNextIteration(long delay) {
-            ThreadUtil.sleep(delay);
-            executor.execute(this);
+            if (!Thread.currentThread().isInterrupted()) {
+                ThreadUtil.sleep(delay);
+                executor.execute(this);
+            }
         }
 
         @NonNull
