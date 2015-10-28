@@ -35,6 +35,7 @@ public class LoginJSON extends JSONObject {
         String timestamp = format.format(new Date());
         this.put(SERIALIZE_KEY.USERNAME.toString(), username);
         this.put(SERIALIZE_KEY.PASSWORD.toString(), password);
+        this.put(SERIALIZE_KEY.TIMESTAMP.toString(), password);
     }
 
 

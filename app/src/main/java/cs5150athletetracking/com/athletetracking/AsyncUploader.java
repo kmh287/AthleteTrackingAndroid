@@ -5,11 +5,6 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-
-/**
- * Created by mag94 on 10/19/15.
- */
-
 public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
 
     private static final String TAG = "AsyncUploader";
@@ -34,7 +29,6 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
     protected Integer doInBackground(JSONObject... params) {
         int result = 0;
 
-        int count = params.length;
         for (JSONObject param : params) {
             result += uploader.upload(param);
         }
