@@ -8,10 +8,14 @@ import android.webkit.WebViewClient;
 
 import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
 
+/**
+ * This activity just opens the spectator portion
+ * of the website inside of the app.
+ */
 public class SpectatorActivity extends AppCompatActivity {
 
     public static final String URL_PREF = "url";
-    private final String SPECTATOR_URL = "http://www.reddit.com";
+    private final String SPECTATOR_URL = "http://www.reddit.com"; //TODO change, obviously
     private WebView webView;
 
     @Override
@@ -38,14 +42,23 @@ public class SpectatorActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Save the activity's state when the activity is paused.
+     * This happens when the user navigates away from the app
+     * or rotates the device.
+     */
     @Override
     protected void onPause(){
         super.onPause();
         if (webView != null) {
+            // Save the current URL to preferences
             PreferenceUtil.writeToPrefs(getPrefs(), "url", webView.getUrl());
         }
     }
 
+    /**
+     * Restore the state saved in onPause()
+     */
     @Override
     protected void onResume(){
         super.onResume();

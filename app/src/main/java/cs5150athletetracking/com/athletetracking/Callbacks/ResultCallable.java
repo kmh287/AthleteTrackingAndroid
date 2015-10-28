@@ -1,4 +1,4 @@
-package cs5150athletetracking.com.athletetracking;
+package cs5150athletetracking.com.athletetracking.Callbacks;
 
 
 public interface ResultCallable {

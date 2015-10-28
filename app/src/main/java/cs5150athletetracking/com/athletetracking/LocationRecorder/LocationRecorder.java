@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import cs5150athletetracking.com.athletetracking.JSONFormats.LocationJSON;
-import cs5150athletetracking.com.athletetracking.UIStatusCallback;
+import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
 import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
 public class LocationRecorder {
@@ -55,7 +55,6 @@ public class LocationRecorder {
         }
     }
 
-
     private final String username;
     private final List<JSONObject> locData;
     private final AtomicReference<LocationRecorderError> error;
@@ -81,19 +80,17 @@ public class LocationRecorder {
         LocationManager manager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
         boolean isGPSEnabled = manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         boolean isNetworkEnabled = manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        if (isGPSEnabled && isNetworkEnabled){
+        if (isGPSEnabled || isNetworkEnabled) {
+            // Even if we have only one, these can change mid-run.
+            // So we should be prepared for having both all the time.
             return new DualProviderLocationTracker(activity);
-        } else if (isGPSEnabled){
-            return new ProviderLocationTracker(activity, ProviderLocationTracker.ProviderType.GPS);
-        } else if (isNetworkEnabled){
-            return new ProviderLocationTracker(activity, ProviderLocationTracker.ProviderType.NETWORK);
         } else {
             fail(LocationRecorderError.NO_PROVIDER);
             return null;
         }
     }
 
-    @NonNull
+    // Create a new executor service for our location recording thread
     private ThreadPoolExecutor getSingleThreadedThreadPoolExecutor() {
         return new ThreadPoolExecutor(1, 1, 30, TimeUnit.SECONDS,
                 new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -148,12 +145,12 @@ public class LocationRecorder {
                     Location loc = locationTracker.getLocation();
                     LocationJSON json = getLocationJSON(loc);
                     locData.add(json);
-                    Log.i("LOCATIONRECORDER", json.toString());
+                    Log.i(TAG + "_thread", json.toString());
                     nullLocCounter.set(0);
                     callback.green("Transmitting");
                     scheduleNextIteration(REGULAR_SLEEP_PERIOD);
                 } else {
-                    if(nullLocCounter.incrementAndGet() > NULL_LOC_TOLERANCE){
+                    if(nullLocCounter.incrementAndGet() >= NULL_LOC_TOLERANCE){
                         callback.yellow("Location Unavailable");
                     }
                     scheduleNextIteration(NULL_LOC_SLEEP_PERIOD);
