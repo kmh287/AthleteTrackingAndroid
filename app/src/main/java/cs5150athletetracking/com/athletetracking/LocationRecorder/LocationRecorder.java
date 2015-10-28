@@ -11,6 +11,7 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -22,8 +23,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
+import cs5150athletetracking.com.athletetracking.Http.AsyncUploader;
 import cs5150athletetracking.com.athletetracking.JSONFormats.LocationJSON;
 import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
+import cs5150athletetracking.com.athletetracking.JSONFormats.LocationUploadJSON;
 import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
 public class LocationRecorder {
@@ -134,7 +138,7 @@ public class LocationRecorder {
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
                 //TODO replace with async upload
-                uploadBatch();
+                asyncUploadBatch();
             }
             if (haveLocationPermission()) {
                 if (locationTracker.hasLocation()){
@@ -156,8 +160,30 @@ public class LocationRecorder {
             }
         }
 
-        private boolean uploadBatch(){
-            return true;
+        private void asyncUploadBatch(){
+            try {
+                LocationUploadJSON uploadJSON = null;
+                synchronized (locData) {
+                    uploadJSON = new LocationUploadJSON(username, locData);
+                }
+
+                AsyncUploader asyncUploader = new AsyncUploader();
+                asyncUploader.setCallBack(new ResultCallable() {
+                    @Override
+                    public void success() {
+                        callback.green("Transmitting");
+                    }
+
+                    @Override
+                    public void failure() {
+                        callback.yellow("Low signal");
+                    }
+                });
+                asyncUploader.execute(uploadJSON);
+            } catch (JSONException e){
+                Log.e(TAG, "Failure building Upload JSON", e);
+                callback.red("Upload Error");
+            }
         }
 
         private void scheduleNextIteration(long delay) {

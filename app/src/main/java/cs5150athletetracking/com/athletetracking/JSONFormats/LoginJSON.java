@@ -10,32 +10,14 @@ import java.util.Locale;
 
 public class LoginJSON extends JSONObject {
 
-    private final String TAG = "LoginJSON";
+    private static final String TAG = "LoginJSON";
     private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
-
-    private enum SERIALIZE_KEY{
-        USERNAME, PASSWORD, TIMESTAMP;
-
-        @Override
-        public String toString(){
-            switch(this){
-                case USERNAME:
-                    return "user";
-                case PASSWORD:
-                    return "pass";
-                case TIMESTAMP:
-                    return "t";
-                default:
-                    return "";
-            }
-        }
-    }
 
     public LoginJSON(String username, String password) throws JSONException{
         String timestamp = format.format(new Date());
-        this.put(SERIALIZE_KEY.USERNAME.toString(), username);
-        this.put(SERIALIZE_KEY.PASSWORD.toString(), password);
-        this.put(SERIALIZE_KEY.TIMESTAMP.toString(), password);
+        this.put(SerializeKey.USERNAME.toString(), username);
+        this.put(SerializeKey.PASSWORD.toString(), password);
+        this.put(SerializeKey.TIMESTAMP.toString(), password);
     }
 
 

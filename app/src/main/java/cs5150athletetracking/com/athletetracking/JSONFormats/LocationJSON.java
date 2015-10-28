@@ -15,62 +15,40 @@ public class LocationJSON extends JSONObject {
     private final String TAG = "LocationJSON";
     private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
 
-    private enum SERIALIZE_KEY{
-        USER, TIMESTAMP, LATITUDE, LONGITUDE, ALTITUDE;
-
-        @Override
-        public String toString(){
-            switch(this){
-                case USER:
-                    return "user";
-                case TIMESTAMP:
-                    return "t";
-                case LATITUDE:
-                    return "lat";
-                case LONGITUDE:
-                    return "long";
-                case ALTITUDE:
-                    return "alt";
-                default:
-                    return "";
-            }
-        }
-    }
-
     public LocationJSON(String username, double latitude,
                         double longitude, double altitude){
 
         String timestamp = format.format(new Date());
 
         try {
-            this.put(SERIALIZE_KEY.USER.toString(),     username);
-            this.put(SERIALIZE_KEY.TIMESTAMP.toString(),timestamp);
-            this.put(SERIALIZE_KEY.LATITUDE.toString(), latitude);
-            this.put(SERIALIZE_KEY.LONGITUDE.toString(),longitude);
-            this.put(SERIALIZE_KEY.ALTITUDE.toString(), altitude);
+            this.put(SerializeKey.USERNAME.toString(),     username);
+            this.put(SerializeKey.TIMESTAMP.toString(),timestamp);
+            this.put(SerializeKey.LATITUDE.toString(), latitude);
+            this.put(SerializeKey.LONGITUDE.toString(),longitude);
+            this.put(SerializeKey.ALTITUDE.toString(), altitude);
         } catch (JSONException e){
             Log.e(TAG, "Problem in constructor", e);
         }
     }
 
     public String getUsername() throws JSONException{
-        return this.getString(SERIALIZE_KEY.USER.toString());
+        return this.getString(SerializeKey.USERNAME.toString());
     }
 
     public String getTimestamp() throws JSONException{
-        return this.getString(SERIALIZE_KEY.TIMESTAMP.toString());
+        return this.getString(SerializeKey.TIMESTAMP.toString());
     }
 
     public double getLatitude() throws JSONException{
-        return this.getDouble(SERIALIZE_KEY.LATITUDE.toString());
+        return this.getDouble(SerializeKey.LATITUDE.toString());
     }
 
     public double getLongitude() throws JSONException{
-        return this.getDouble(SERIALIZE_KEY.LONGITUDE.toString());
+        return this.getDouble(SerializeKey.LONGITUDE.toString());
     }
 
     public double getAltitude() throws JSONException{
-        return this.getDouble(SERIALIZE_KEY.ALTITUDE.toString());
+        return this.getDouble(SerializeKey.ALTITUDE.toString());
     }
 
 
