@@ -84,10 +84,14 @@ public class LocationRecorder {
         LocationManager manager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
         boolean isGPSEnabled = manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         boolean isNetworkEnabled = manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        if (isGPSEnabled || isNetworkEnabled) {
+        if (isGPSEnabled && isNetworkEnabled) {
             // Even if we have only one, these can change mid-run.
             // So we should be prepared for having both all the time.
             return new DualProviderLocationTracker(activity);
+        } else if (isGPSEnabled) {
+            return new ProviderLocationTracker(activity, ProviderLocationTracker.ProviderType.GPS);
+        } else if (isNetworkEnabled){
+            return new ProviderLocationTracker(activity, ProviderLocationTracker.ProviderType.NETWORK);
         } else {
             fail(LocationRecorderError.NO_PROVIDER);
             return null;
