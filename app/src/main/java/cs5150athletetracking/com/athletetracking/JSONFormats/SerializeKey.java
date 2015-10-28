@@ -1,6 +1,9 @@
 package cs5150athletetracking.com.athletetracking.JSONFormats;
 
-//Enums are expensive on Android.
+/**
+ * Enums are expensive on android. Use one comon one rather than
+ * multiple enums in each of the JSON classes.
+ */
 public enum SerializeKey {
     /* Common */
     USERNAME, TIMESTAMP,
