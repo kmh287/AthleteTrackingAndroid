@@ -1,14 +1,21 @@
-package cs5150athletetracking.com.athletetracking;
+package cs5150athletetracking.com.athletetracking.Http;
 
 import android.os.AsyncTask;
 import android.util.Log;
 
 import org.json.JSONObject;
 
+import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
+
+/**
+ * This class is an asynchronous wrapper around {@link Uploader}
+ * JSONObjects passed in will be uploaded *separately* but still
+ * asynchronously
+ */
 public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
 
     private static final String TAG = "AsyncUploader";
-
+    //An optional callback to be called on success or failure of upload
     private ResultCallable callBack;
     private final Uploader uploader;
 
@@ -41,7 +48,6 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
     protected void onPostExecute(Integer result) {
         /* Sent LocationJson. Check for received confirmation */
 
-        //TODO fix?
         if(result > 0) {
             if (getCallBack() != null)
                 getCallBack().success();

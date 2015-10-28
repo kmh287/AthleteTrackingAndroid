@@ -9,6 +9,7 @@ import android.widget.Button;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
 import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecorder;
 import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
 
@@ -45,15 +46,19 @@ public class TrackingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Get the username from the data passed through from
+        // login.
         final AtomicReference<String> username = new AtomicReference<>("");
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             username.set(extras.getString("username", ""));
         }
         if (username.get().equals("")){
-            throw new RuntimeException("Username not passed through correctly:" + username);
+            throw new RuntimeException("Username not passed through correctly:" + username.get());
         }
         this.username.set(username.get());
+
         setContentView(R.layout.activity_tracking);
 
         final Button statusBar = (Button) findViewById(R.id.status_button);
@@ -62,6 +67,8 @@ public class TrackingActivity extends AppCompatActivity {
 
         final Button trackingButton = (Button) findViewById(R.id.trackingButton);
         trackingButton.setOnClickListener(new View.OnClickListener() {
+            // When the user presses the button to begin recording,
+            // lazily create the location recorder.
             @Override
             public void onClick(View v) {
                 createLocationRecorder(username.get(), callback, trackingButton);
@@ -69,6 +76,12 @@ public class TrackingActivity extends AppCompatActivity {
         });
     }
 
+    /**Create a new location recorder if it hasn't been created yet or it has an error.
+     *
+     * @param username The user's username (needed for transmitting data)
+     * @param callback A callback to call when status changes between red, yellow, and green
+     * @param trackingButton The button that, when pressed, started location recording
+     */
     private void createLocationRecorder(String username, UIStatusCallback callback, Button trackingButton) {
         if (locRecorder == null || locRecorder.hasError()) {
             locRecorder = new LocationRecorder(username, TrackingActivity.this, callback);
@@ -77,6 +90,7 @@ public class TrackingActivity extends AppCompatActivity {
         }
     }
 
+    // Save actiivity state on pause
     @Override
     protected void onPause(){
         super.onPause();
@@ -84,6 +98,10 @@ public class TrackingActivity extends AppCompatActivity {
         PreferenceUtil.writeToPrefs(getPrefs(), "username", username.get());
     }
 
+    /**
+     *  Restore activity state on resume. Need to restore the username
+     *  and the current status.
+     */
     @Override
     protected void onResume(){
         super.onResume();
@@ -93,7 +111,10 @@ public class TrackingActivity extends AppCompatActivity {
         PreferenceUtil.clearPref(prefs, LOCATION_TRACKER_STATUS_PREF);
         PreferenceUtil.clearPref(prefs, USERNAME_PREF);
         if (statusInt == -1){
-            return;
+            // IF we somehow can't restore the state, we should
+            // go back to the red state and wait for the user
+            // to restart recording
+            statusInt = Status.RED.ordinal();
         }
         if ("".equals(username)){
             finish(); // User needs to login again. Ideally this never happens
@@ -106,6 +127,8 @@ public class TrackingActivity extends AppCompatActivity {
         final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
 
         if (!restoredStatus.equals(Status.RED)){
+            // In yellow and green states, user is already recording
+            // so we should re-create the location recorder.
             createLocationRecorder(username, callback, trackingButton);
         }
     }
@@ -119,6 +142,11 @@ public class TrackingActivity extends AppCompatActivity {
         return getSharedPreferences("RNRPrefs", MODE_PRIVATE);
     }
 
+    /**
+     * The callback used by the location recorder. There is quite
+     * a bit of ugliness here to ensure backwards compatability to
+     * older target phones.
+     */
     private class TrackingStatusCallback extends UIStatusCallback {
         private final Button statusBar;
 
