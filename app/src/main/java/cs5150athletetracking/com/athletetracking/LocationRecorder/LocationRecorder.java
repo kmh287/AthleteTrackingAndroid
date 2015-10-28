@@ -46,7 +46,7 @@ public class LocationRecorder {
         public String getErrorString(){
             switch(this){
                 case PERMISSIONS:
-                    return "Insufficient permissions.";
+                    return "Insufficient permissions";
                 case NO_PROVIDER:
                     return "Unable to determine location";
                 default:
@@ -68,7 +68,7 @@ public class LocationRecorder {
 
     public LocationRecorder(String username, Activity activity, UIStatusCallback callback) {
         this.username = username;
-        this.activity = activity;   //TODO this may cause problems. Let's be careful
+        this.activity = activity;
         this.callback = callback;
         this.locData = new ArrayList<>();
         this.error = new AtomicReference<>(LocationRecorderError.NONE);
@@ -128,17 +128,13 @@ public class LocationRecorder {
 
     protected class LocationRecorderRunnable implements Runnable {
 
-        private AtomicInteger nullLocCounter = new AtomicInteger(0);
+        private final AtomicInteger nullLocCounter = new AtomicInteger(0);
 
         @Override
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
                 //TODO replace with async upload
-                if (uploadBatch()){
-                    callback.green("Transmitting");
-                } else {
-                    callback.yellow("Connection Interrupted. Retrying");
-                }
+                uploadBatch();
             }
             if (haveLocationPermission()) {
                 if (locationTracker.hasLocation()){
@@ -173,11 +169,8 @@ public class LocationRecorder {
 
         @NonNull
         private LocationJSON getLocationJSON(Location loc) {
-            double latitude = loc.getLatitude();
-            double longitude = loc.getLongitude();
-            double altitude = loc.getAltitude();
-            return new LocationJSON(username, latitude,
-                                    longitude, altitude);
+            return new LocationJSON(username, loc.getLatitude(),
+                                    loc.getLongitude(), loc.getAltitude());
         }
 
         private boolean haveLocationPermission() {

@@ -36,7 +36,6 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
     protected Integer doInBackground(JSONObject... params) {
         int result = 0;
 
-        int count = params.length;
         for (JSONObject param : params) {
             result += uploader.upload(param);
         }
