@@ -14,12 +14,12 @@ public class ProviderLocationTracker implements LocationListener, LocationTracke
     // The minimum time between updates in milliseconds
     private static final long MIN_UPDATE_TIME = 1000 * 60;
 
-    private LocationManager lm;
+    private final LocationManager lm;
 
     public enum ProviderType{
         NETWORK,
         GPS
-    };
+    }
 
     private final String provider;
 
