@@ -35,7 +35,7 @@ public class Uploader {
             URL url = new URL(URL_STRING);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setDoOutput(true);
-            urlConnection.setConnectTimeout(1000*10 /* ten seconds */);
+            urlConnection.setConnectTimeout(1000*30 /* thirty seconds */);
             urlConnection.setRequestMethod("POST");
             urlConnection.setRequestProperty("Content-Type", "application/json");
             urlConnection.setRequestProperty("Content-Length", String.valueOf(jsonPostBytes.length));
@@ -52,6 +52,7 @@ public class Uploader {
                     message.append( (char)c);
 
                 response = message.toString();
+                //TODO parse return JSON
                 Log.d(TAG, response);
                 result = SUCCESS;
             } else {
