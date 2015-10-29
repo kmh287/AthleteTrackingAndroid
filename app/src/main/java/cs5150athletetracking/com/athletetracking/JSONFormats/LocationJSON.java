@@ -4,16 +4,12 @@ package cs5150athletetracking.com.athletetracking.JSONFormats;
 import android.util.Log;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
-public class LocationJSON extends JSONObject {
+public class LocationJSON extends AbstractJSONFormat {
 
     private final String TAG = "LocationJSON";
-    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
 
     public LocationJSON(String username, double latitude,
                         double longitude, double altitude){
@@ -21,35 +17,28 @@ public class LocationJSON extends JSONObject {
         String timestamp = format.format(new Date());
 
         try {
-            this.put(SerializeKey.USERNAME.toString(),     username);
-            this.put(SerializeKey.TIMESTAMP.toString(),timestamp);
-            this.put(SerializeKey.LATITUDE.toString(), latitude);
-            this.put(SerializeKey.LONGITUDE.toString(),longitude);
-            this.put(SerializeKey.ALTITUDE.toString(), altitude);
+            this.put(SERIALIZE_KEY.USERNAME.toString(), username);
+            this.put(SERIALIZE_KEY.TIMESTAMP.toString(),timestamp);
+            this.put(SERIALIZE_KEY.LATITUDE.toString(), latitude);
+            this.put(SERIALIZE_KEY.LONGITUDE.toString(),longitude);
         } catch (JSONException e){
             Log.e(TAG, "Problem in constructor", e);
         }
     }
 
     public String getUsername() throws JSONException{
-        return this.getString(SerializeKey.USERNAME.toString());
+        return this.getString(SERIALIZE_KEY.USERNAME.toString());
     }
 
     public String getTimestamp() throws JSONException{
-        return this.getString(SerializeKey.TIMESTAMP.toString());
+        return this.getString(SERIALIZE_KEY.TIMESTAMP.toString());
     }
 
     public double getLatitude() throws JSONException{
-        return this.getDouble(SerializeKey.LATITUDE.toString());
+        return this.getDouble(SERIALIZE_KEY.LATITUDE.toString());
     }
 
     public double getLongitude() throws JSONException{
-        return this.getDouble(SerializeKey.LONGITUDE.toString());
+        return this.getDouble(SERIALIZE_KEY.LONGITUDE.toString());
     }
-
-    public double getAltitude() throws JSONException{
-        return this.getDouble(SerializeKey.ALTITUDE.toString());
-    }
-
-
 }

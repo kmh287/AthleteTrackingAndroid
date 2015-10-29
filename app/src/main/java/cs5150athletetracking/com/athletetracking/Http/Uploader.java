@@ -3,6 +3,7 @@ package cs5150athletetracking.com.athletetracking.Http;
 
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -23,6 +24,7 @@ public class Uploader {
     private static final int FAILURE = 0;
 
     private String response;
+    private JSONObject responseJSON;
 
     public Integer upload(JSONObject json){
         Integer result = FAILURE;
@@ -68,6 +70,17 @@ public class Uploader {
 
     public String getResponse() {
         return response;
+    }
+
+    public JSONObject getResponseJSON(){
+        try {
+            if (responseJSON == null) {
+                responseJSON = new JSONObject(response);
+            }
+            return responseJSON;
+        } catch (JSONException e){
+            return null;
+        }
     }
 
 }

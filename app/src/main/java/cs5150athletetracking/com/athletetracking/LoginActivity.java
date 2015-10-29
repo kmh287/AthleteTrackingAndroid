@@ -29,13 +29,20 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import cs5150athletetracking.com.athletetracking.Http.Uploader;
+import cs5150athletetracking.com.athletetracking.JSONFormats.LoginJSON;
 import io.testfire.Testfire;
 import io.testfire.TestfireParamCrashReporting;
 import io.testfire.TestfireParamGesture;
@@ -356,12 +363,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         private final String email;
         private final String password;
-        private final ThreadPoolExecutor executor;
+        private JSONObject response;
 
         UserLoginTask(String email, String password) {
             this.email = email;
             this.password = password;
-            this.executor = getSingleThreadedThreadPoolExecutor();
         }
 
         private ThreadPoolExecutor getSingleThreadedThreadPoolExecutor() {
@@ -374,13 +380,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // TODO: attempt authentication against a network service.
 
 //            try {
-//                // Simulate network access.
 //                LoginJSON login = new LoginJSON(email, password);
 //                Uploader uploader = new Uploader();
 //                int res = uploader.upload(login);
 //                if (res > 0){
-//                    String reply = uploader.getResponse();
-//                    return "OK".equals(reply);
+//                    JSONObject response = uploader.getResponseJSON();
+//                    this.response = response;
+//                    return response.getBoolean("success");
+//                } else {
+//                    return false;
 //                }
 //            } catch (JSONException e){
 //                return false;
@@ -407,9 +415,23 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
+                ArrayList<String> raceList = new ArrayList<>(Arrays.asList("Foo", "Bar", "Baz"));
+//                try {
+//                    // Get the list of races from the JSON
+//                    JSONArray races = this.response.getJSONArray("races");
+//                    for(int i = 0; i < races.length(); ++i){
+//                        raceList.add(races.getString(i));
+//                    }
+//                } catch (JSONException e){
+//                    passwordView.setError("Connection Problem. Please retry");
+//                    passwordView.requestFocus();
+//                    return;
+//                }
+
                 // If the login succeeds, start a new instance of TrackingActivity
                 Intent trackingIntent = new Intent(LoginActivity.this, TrackingActivity.class);
                 trackingIntent.putExtra("username", email);
+                trackingIntent.putStringArrayListExtra("races", raceList);
                 startActivity(trackingIntent);
             } else {
                 passwordView.setError(getString(R.string.error_incorrect_password));

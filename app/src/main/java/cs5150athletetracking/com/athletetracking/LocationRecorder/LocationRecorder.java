@@ -141,8 +141,7 @@ public class LocationRecorder {
         @Override
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
-                //TODO replace with async upload
-                asyncUploadBatch();
+//                asyncUploadBatch();
             }
             if (haveLocationPermission()) {
                 if (locationTracker.hasLocation()){
