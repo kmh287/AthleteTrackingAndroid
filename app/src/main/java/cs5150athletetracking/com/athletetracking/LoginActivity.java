@@ -415,7 +415,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
-                ArrayList<String> raceList = new ArrayList<>(Arrays.asList("Foo", "Bar", "Baz"));
+                ArrayList<String> raceList = new ArrayList<>(Arrays.asList("Foo", "Bar", "Baz", "The Very Long Name Four Miler that has a name so long that it wont fit maybe"));
 //                try {
 //                    // Get the list of races from the JSON
 //                    JSONArray races = this.response.getJSONArray("races");

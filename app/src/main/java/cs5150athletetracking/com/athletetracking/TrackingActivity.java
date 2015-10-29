@@ -96,8 +96,9 @@ public class TrackingActivity extends AppCompatActivity {
         final Spinner spinner = (Spinner) findViewById(R.id.spinner);
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<String>(this,
-                                         R.layout.support_simple_spinner_dropdown_item,
+                                         R.layout.spinner_layout,
                                          races);
+        adapter.setDropDownViewResource(R.layout.spinner_layout);
         spinner.setAdapter(adapter);
         spinner.setSelection(0, false);
         spinner.setOnItemSelectedListener(new RaceSelectionClickListener(races, trackingButton, spinner));
@@ -227,6 +228,8 @@ public class TrackingActivity extends AppCompatActivity {
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             AsyncUploader asyncUploader = new AsyncUploader();
             ResultCallable callBack = RaceSelectionResultCallback(races.get(position));
+            callBack.success();
+            //TODO reove above call and uncomment below code
 
 //            asyncUploader.setCallBack(callBack);
 //
@@ -268,7 +271,6 @@ public class TrackingActivity extends AppCompatActivity {
                 private void showText() {
                     TextView currentRaceTextView = (TextView) findViewById(R.id.currentRace);
                     currentRaceTextView.setText(getString(R.string.currentRace, raceName));
-                    currentRaceTextView.setVisibility(View.VISIBLE);
                 }
 
                 private void hideSpinner() {

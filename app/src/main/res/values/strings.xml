@@ -15,5 +15,6 @@
     </string>
     
     <string name="beginTracking">BEGIN TRACKING</string>
+    <string name="selectARace">Select Race</string>
     <string name="currentRace">Current Race: <b>%1$s</b> </string>
 </resources>
