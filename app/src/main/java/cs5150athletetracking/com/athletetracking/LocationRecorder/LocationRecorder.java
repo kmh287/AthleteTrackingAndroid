@@ -170,7 +170,7 @@ public class LocationRecorder {
                     uploadJSON = new LocationUploadJSON(username, locData);
                 }
 
-                AsyncUploader asyncUploader = new AsyncUploader();
+                final AsyncUploader asyncUploader = new AsyncUploader();
                 asyncUploader.setCallBack(new ResultCallable() {
                     @Override
                     public void success() {
