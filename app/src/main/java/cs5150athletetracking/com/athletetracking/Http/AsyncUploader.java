@@ -34,13 +34,13 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
 
     @Override
     protected Integer doInBackground(JSONObject... params) {
-        int result = 0;
 
-        for (JSONObject param : params) {
-            result += uploader.upload(param);
-        }
-
-        return result;
+        // Only upload the first param passed in
+        // No need for multiple since they cna be bundled as JSON
+        // arrays.
+        uploader.upload(params[0]);
+        JSONObject response = uploader.getResponseJSON();
+        return response.optInt("success", 0);
     }
 
 

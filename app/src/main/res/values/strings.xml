@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Athlete Tracking</string>
+    <string name="app_name">Red Newt Racing Athlete Tracking</string>
     
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
@@ -15,4 +15,6 @@
     </string>
     
     <string name="beginTracking">BEGIN TRACKING</string>
+    <string name="selectARace">Select Race</string>
+    <string name="currentRace">Current Race: <b>%1$s</b> </string>
 </resources>
