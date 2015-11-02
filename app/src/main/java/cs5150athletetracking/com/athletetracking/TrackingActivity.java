@@ -3,20 +3,38 @@ package cs5150athletetracking.com.athletetracking;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
+import android.widget.Adapter;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListAdapter;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
+import android.widget.TextView;
 
+import org.json.JSONException;
+
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
+import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
 import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
+import cs5150athletetracking.com.athletetracking.Http.AsyncUploader;
+import cs5150athletetracking.com.athletetracking.JSONFormats.RaceSelectionJSON;
 import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecorder;
 import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
 
 public class TrackingActivity extends AppCompatActivity {
 
-    public static final String LOCATION_TRACKER_STATUS_PREF = "locationTrackerStatus";
-    public static final String USERNAME_PREF = "username";
+    private static final String TAG = "TrackingActivity";
+
+    private static final String LOCATION_TRACKER_STATUS_PREF = "locationTrackerStatus";
+    private static final String USERNAME_PREF = "username";
+    private static final String RACE_PREF = "race";
 
     private enum Status{
         /**
@@ -42,30 +60,43 @@ public class TrackingActivity extends AppCompatActivity {
     private LocationRecorder locRecorder;
     private final AtomicReference<Status> status = new AtomicReference<>(Status.RED);
     private final AtomicReference<String> username = new AtomicReference<>();
+    private final AtomicReference<String> race = new AtomicReference<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Get the username from the data passed through from
-        // login.
-        final AtomicReference<String> username = new AtomicReference<>("");
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            username.set(extras.getString("username", ""));
+        String restoredUsername = getUsername();
+        if (restoredUsername.equals("")) {
+            // Force user to login again.. This should never happen
+            finish();
+            Log.e(TAG, "Username not passed through properly.");
         }
-        if (username.get().equals("")){
-            throw new RuntimeException("Username not passed through correctly:" + username.get());
-        }
-        this.username.set(username.get());
+        this.username.set(restoredUsername);
+        final ArrayList<String> races = getRaces();
 
         setContentView(R.layout.activity_tracking);
 
+        // Setup the status bar and tracking button
         final Button statusBar = (Button) findViewById(R.id.status_button);
         final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
 
         setupTrackingButtonListener(username, callback);
         setupStatusBarListener(username, statusBar, callback);
+
+        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
+
+        // Set up spinner to allow user to select race
+        final Spinner spinner = (Spinner) findViewById(R.id.spinner);
+        ArrayAdapter<String> adapter =
+                new ArrayAdapter<String>(this,
+                                         R.layout.spinner_layout,
+                                         races);
+        adapter.setDropDownViewResource(R.layout.spinner_layout);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(0, false);
+        spinner.setOnItemSelectedListener(new RaceSelectionClickListener(races, trackingButton, spinner));
+
 
     }
 
@@ -95,6 +126,33 @@ public class TrackingActivity extends AppCompatActivity {
                 createLocationRecorder(username.get(), callback, trackingButton);
             }
         });
+        trackingButton.setVisibility(View.INVISIBLE);
+        trackingButton.setClickable(false);     //Not clickable until race selected
+    }
+
+    private ArrayList<String> getRaces(){
+        ArrayList<String> races = null;
+        Bundle extras = getIntent().getExtras();
+        if (extras != null){
+            races = extras.getStringArrayList("races");
+        }
+        if (races == null){
+            finish();
+            Log.e(TAG, "Races not passed through properly.");
+        }
+        return races;
+    }
+
+    @NonNull
+    private String getUsername() {
+        // Get the username from the data passed through from
+        // login.
+        String user = "";
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            user = extras.getString("username", "");
+        }
+        return user;
     }
 
     /**Create a new location recorder if it hasn't been created yet or it has an error.
@@ -117,6 +175,7 @@ public class TrackingActivity extends AppCompatActivity {
         super.onPause();
         PreferenceUtil.writeToPrefs(getPrefs(), "locationTrackerStatus", status.get().ordinal());
         PreferenceUtil.writeToPrefs(getPrefs(), "username", username.get());
+        PreferenceUtil.writeToPrefs(getPrefs(), "race", race.get());
     }
 
     /**
@@ -128,29 +187,43 @@ public class TrackingActivity extends AppCompatActivity {
         super.onResume();
         SharedPreferences prefs = getPrefs();
         int statusInt = PreferenceUtil.readPrefs(prefs, LOCATION_TRACKER_STATUS_PREF, -1);
-        String username = PreferenceUtil.readPrefs(prefs, USERNAME_PREF, "");
+        String restoredUsername = PreferenceUtil.readPrefs(prefs, USERNAME_PREF, "");
+        String restoredRaceName = PreferenceUtil.readPrefs(prefs, RACE_PREF, "");
         PreferenceUtil.clearPref(prefs, LOCATION_TRACKER_STATUS_PREF);
         PreferenceUtil.clearPref(prefs, USERNAME_PREF);
+        PreferenceUtil.clearPref(prefs, RACE_PREF);
+
         if (statusInt == -1){
             // IF we somehow can't restore the state, we should
             // go back to the red state and wait for the user
             // to restart recording
             statusInt = Status.RED.ordinal();
         }
-        if ("".equals(username)){
-            finish(); // User needs to login again. Ideally this never happens
+
+        if ("".equals(restoredUsername)){
+            // Try to get from the extras bundle if it's not in preferences
+            restoredUsername = getUsername();
+            // If the username is STILL the empty string, we can't recover.
+            if ("".equals(restoredUsername)) {
+                finish(); // User needs to login again. Ideally this never happens
+            }
         }
+
         Status restoredStatus =  Status.values()[statusInt];
         status.set(restoredStatus);
+        username.set(restoredUsername);
+        race.set(restoredRaceName);
 
         final Button statusBar = (Button) findViewById(R.id.status_button);
         final Button trackingButton = (Button) findViewById(R.id.trackingButton);
         final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
+        final TextView currentRaceTextView = (TextView) findViewById(R.id.currentRace);
 
-        if (!restoredStatus.equals(Status.RED)){
+        if (restoredStatus.equals(Status.YELLOW) || restoredStatus.equals(Status.GREEN)){
             // In yellow and green states, user is already recording
             // so we should re-create the location recorder.
-            createLocationRecorder(username, callback, trackingButton);
+            currentRaceTextView.setText(getString(R.string.currentRace, restoredRaceName));
+            createLocationRecorder(restoredUsername, callback, trackingButton);
         }
     }
 
@@ -163,7 +236,82 @@ public class TrackingActivity extends AppCompatActivity {
         return getSharedPreferences("RNRPrefs", MODE_PRIVATE);
     }
 
-    /**
+
+    // Listener for when the user selects a race from the dropdown
+    private class RaceSelectionClickListener implements AdapterView.OnItemSelectedListener {
+        private final ArrayList<String> races;
+        private final Button trackingButton;
+        private final Spinner spinner;
+
+        public RaceSelectionClickListener(ArrayList<String> races, Button trackingButton, Spinner spinner) {
+            this.races = races;
+            this.trackingButton = trackingButton;
+            this.spinner = spinner;
+        }
+
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            AsyncUploader asyncUploader = new AsyncUploader();
+            ResultCallable callBack = RaceSelectionResultCallback(races.get(position));
+            callBack.success();
+            //TODO reove above call and uncomment below code
+
+//            asyncUploader.setCallBack(callBack);
+//
+//            // Build RaceSelectionJSON
+//            RaceSelectionJSON json;
+//            try {
+//                String race = races.get(position);
+//                json = new RaceSelectionJSON(username.get(), race);
+//            } catch (JSONException e){
+//                callBack.failure();
+//                return;
+//            }
+//            asyncUploader.execute(json);
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {}
+
+        @NonNull
+        private ResultCallable RaceSelectionResultCallback(final String raceName) {
+            return new ResultCallable() {
+                @Override
+                public void success() {
+                    race.set(raceName);
+                    trackingButton.setClickable(true);
+                    //Remove the spinner and hide it from view
+                    hideSpinner();
+                    //Display the current race name
+                    showText();
+                    // Display the button to start tracking
+                    showTrackingButton();
+                }
+
+                private void showTrackingButton(){
+                    trackingButton.setVisibility(View.VISIBLE);
+                    trackingButton.setClickable(true);
+                }
+
+                private void showText() {
+                    TextView currentRaceTextView = (TextView) findViewById(R.id.currentRace);
+                    currentRaceTextView.setText(getString(R.string.currentRace, raceName));
+                }
+
+                private void hideSpinner() {
+                    spinner.setClickable(false);
+                    spinner.setVisibility(View.INVISIBLE);
+                }
+
+                @Override
+                public void failure() {
+                    // We do nothing here. Let the user keep trying.
+                }
+            };
+        }
+    }
+
+/**
      * The callback used by the location recorder. There is quite
      * a bit of ugliness here to ensure backwards compatability to
      * older target phones.

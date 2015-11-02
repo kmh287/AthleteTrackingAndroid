@@ -24,16 +24,23 @@
             android:text="ATHLETE"
             android:id="@+id/athlete_button"
             android:textColor="#ffffff"
-            android:background="@color/cornellRed"/>
+            android:background="@color/cornellRed"
+            android:layout_marginTop="20dp"/>
 
         <Button
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="SPECTATOR"
             android:id="@+id/spectator_button"
-            android:layout_gravity="center_horizontal"
             android:background="@color/cornellRed"
             android:textColor="#ffffff"
             android:layout_marginTop="20dp"/>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        </LinearLayout>
+
     </LinearLayout>
 </RelativeLayout>

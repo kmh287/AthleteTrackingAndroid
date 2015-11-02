@@ -11,6 +11,7 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -22,8 +23,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
+import cs5150athletetracking.com.athletetracking.Http.AsyncUploader;
 import cs5150athletetracking.com.athletetracking.JSONFormats.LocationJSON;
 import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
+import cs5150athletetracking.com.athletetracking.JSONFormats.LocationUploadJSON;
 import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
 public class LocationRecorder {
@@ -80,10 +84,14 @@ public class LocationRecorder {
         LocationManager manager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
         boolean isGPSEnabled = manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         boolean isNetworkEnabled = manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        if (isGPSEnabled || isNetworkEnabled) {
+        if (isGPSEnabled && isNetworkEnabled) {
             // Even if we have only one, these can change mid-run.
             // So we should be prepared for having both all the time.
             return new DualProviderLocationTracker(activity);
+        } else if (isGPSEnabled) {
+            return new ProviderLocationTracker(activity, ProviderLocationTracker.ProviderType.GPS);
+        } else if (isNetworkEnabled){
+            return new ProviderLocationTracker(activity, ProviderLocationTracker.ProviderType.NETWORK);
         } else {
             fail(LocationRecorderError.NO_PROVIDER);
             return null;
@@ -133,8 +141,7 @@ public class LocationRecorder {
         @Override
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
-                //TODO replace with async upload
-                uploadBatch();
+//                asyncUploadBatch();
             }
             if (haveLocationPermission()) {
                 if (locationTracker.hasLocation()){
@@ -156,8 +163,30 @@ public class LocationRecorder {
             }
         }
 
-        private boolean uploadBatch(){
-            return true;
+        private void asyncUploadBatch(){
+            try {
+                LocationUploadJSON uploadJSON = null;
+                synchronized (locData) {
+                    uploadJSON = new LocationUploadJSON(username, locData);
+                }
+
+                final AsyncUploader asyncUploader = new AsyncUploader();
+                asyncUploader.setCallBack(new ResultCallable() {
+                    @Override
+                    public void success() {
+                        callback.green("Transmitting");
+                    }
+
+                    @Override
+                    public void failure() {
+                        callback.yellow("Low signal");
+                    }
+                });
+                asyncUploader.execute(uploadJSON);
+            } catch (JSONException e){
+                Log.e(TAG, "Failure building Upload JSON", e);
+                callback.red("Upload Error");
+            }
         }
 
         private void scheduleNextIteration(long delay) {
