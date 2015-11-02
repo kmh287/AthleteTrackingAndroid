@@ -62,9 +62,30 @@ public class TrackingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tracking);
 
         final Button statusBar = (Button) findViewById(R.id.status_button);
-
         final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
 
+        setupTrackingButtonListener(username, callback);
+        setupStatusBarListener(username, statusBar, callback);
+
+    }
+
+    private void setupStatusBarListener(final AtomicReference<String> username, final Button statusBar, final UIStatusCallback callback) {
+        // Add on click listener to status bar in case user
+        // tries to press it to fix the app after entering red state
+        // NOTE: this will not be initially clickable.
+        statusBar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // If we have failed mid-recording, pressing the
+                // status bar should try to restart the recorder
+                if (status.get() == Status.RED){
+                    createLocationRecorder(username.get(), callback, statusBar);
+                }
+            }
+        });
+    }
+
+    private void setupTrackingButtonListener(final AtomicReference<String> username, final UIStatusCallback callback) {
         final Button trackingButton = (Button) findViewById(R.id.trackingButton);
         trackingButton.setOnClickListener(new View.OnClickListener() {
             // When the user presses the button to begin recording,
@@ -163,6 +184,7 @@ public class TrackingActivity extends AppCompatActivity {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.transmitting));
             }
             statusBar.setText(message);
+            statusBar.setClickable(false);
             status.set(Status.GREEN);
         }
 
@@ -175,6 +197,7 @@ public class TrackingActivity extends AppCompatActivity {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.disconnected));
             }
             statusBar.setText(message);
+            statusBar.setClickable(false);
             status.set(Status.YELLOW);
         }
 
@@ -187,6 +210,7 @@ public class TrackingActivity extends AppCompatActivity {
                 statusBar.setBackgroundColor(getResources().getColor(R.color.cornellRedDark));
             }
             statusBar.setText(message);
+            statusBar.setClickable(true);
             status.set(Status.RED);
         }
     }
