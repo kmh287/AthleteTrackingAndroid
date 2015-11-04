@@ -104,13 +104,14 @@ public class TrackingActivity extends AppCompatActivity {
         // Add on click listener to status bar in case user
         // tries to press it to fix the app after entering red state
         // NOTE: this will not be initially clickable.
+        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
         statusBar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // If we have failed mid-recording, pressing the
                 // status bar should try to restart the recorder
                 if (status.get() == Status.RED){
-                    createLocationRecorder(username.get(), callback, statusBar);
+                    createLocationRecorder(username.get(), callback, trackingButton);
                 }
             }
         });

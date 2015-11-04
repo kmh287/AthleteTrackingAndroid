@@ -143,7 +143,8 @@ public class LocationRecorder {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
 //                asyncUploadBatch();
             }
-            if (haveLocationPermission()) {
+            boolean havePermission = haveLocationPermission();
+            if (havePermission) {
                 if (locationTracker.hasLocation()){
                     Location loc = locationTracker.getLocation();
                     LocationJSON json = getLocationJSON(loc);
