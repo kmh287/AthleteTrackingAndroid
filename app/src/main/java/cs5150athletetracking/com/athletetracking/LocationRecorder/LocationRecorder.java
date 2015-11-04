@@ -199,7 +199,7 @@ public class LocationRecorder {
         @NonNull
         private LocationJSON getLocationJSON(Location loc) {
             return new LocationJSON(username, loc.getLatitude(),
-                                    loc.getLongitude(), loc.getAltitude());
+                                    loc.getLongitude());
         }
 
         private boolean haveLocationPermission() {

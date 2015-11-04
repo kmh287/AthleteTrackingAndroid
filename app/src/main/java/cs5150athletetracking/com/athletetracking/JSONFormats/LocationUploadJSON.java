@@ -16,8 +16,10 @@ public class LocationUploadJSON extends AbstractJSONFormat {
 
         JSONArray jsonArray = new JSONArray();
 
-        for (JSONObject location : locations){
-            jsonArray.put(location);
+        if (locations != null) {
+            for (JSONObject location : locations) {
+                jsonArray.put(location);
+            }
         }
 
         this.put(SERIALIZE_KEY.TYPE.toString(), REQUEST_TYPE.LOCATION_UPLOAD.ordinal());

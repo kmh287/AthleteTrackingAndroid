@@ -12,7 +12,7 @@ public class LocationJSON extends AbstractJSONFormat {
     private final String TAG = "LocationJSON";
 
     public LocationJSON(String username, double latitude,
-                        double longitude, double altitude){
+                        double longitude){
 
         String timestamp = format.format(new Date());
 
