@@ -1,22 +1,21 @@
 package cs5150athletetracking.com.athletetracking;
 
+import android.Manifest;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListAdapter;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.TextView;
-
-import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,7 +23,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
 import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
 import cs5150athletetracking.com.athletetracking.Http.AsyncUploader;
-import cs5150athletetracking.com.athletetracking.JSONFormats.RaceSelectionJSON;
 import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecorder;
 import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
 
@@ -35,6 +33,7 @@ public class TrackingActivity extends AppCompatActivity {
     private static final String LOCATION_TRACKER_STATUS_PREF = "locationTrackerStatus";
     private static final String USERNAME_PREF = "username";
     private static final String RACE_PREF = "race";
+    public static final int LOCATION_REQUEST_CODE = 47;
 
     private enum Status{
         /**
@@ -58,6 +57,11 @@ public class TrackingActivity extends AppCompatActivity {
     }
 
     private LocationRecorder locRecorder;
+
+    private final AtomicReference<Button> statusBar = new AtomicReference<Button>();
+
+    private final AtomicReference<Button> trackingButton = new AtomicReference<Button>();
+
     private final AtomicReference<Status> status = new AtomicReference<>(Status.RED);
     private final AtomicReference<String> username = new AtomicReference<>();
     private final AtomicReference<String> race = new AtomicReference<>();
@@ -65,6 +69,7 @@ public class TrackingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_tracking);
 
         String restoredUsername = getUsername();
         if (restoredUsername.equals("")) {
@@ -73,21 +78,20 @@ public class TrackingActivity extends AppCompatActivity {
             Log.e(TAG, "Username not passed through properly.");
         }
         this.username.set(restoredUsername);
-        final ArrayList<String> races = getRaces();
-
-        setContentView(R.layout.activity_tracking);
+        statusBar.set((Button) findViewById(R.id.status_button));
+        trackingButton.set((Button) findViewById(R.id.trackingButton));
 
         // Setup the status bar and tracking button
-        final Button statusBar = (Button) findViewById(R.id.status_button);
-        final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
+        final UIStatusCallback callback = new TrackingStatusCallback();
 
         setupTrackingButtonListener(username, callback);
-        setupStatusBarListener(username, statusBar, callback);
-
-        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
+        setupStatusBarListener(username, callback);
 
         // Set up spinner to allow user to select race
+
+        //TODO refactor to let user change race before pressing begin
         final Spinner spinner = (Spinner) findViewById(R.id.spinner);
+        final ArrayList<String> races = getRaces();
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<String>(this,
                                          R.layout.spinner_layout,
@@ -95,40 +99,52 @@ public class TrackingActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(R.layout.spinner_layout);
         spinner.setAdapter(adapter);
         spinner.setSelection(0, false);
-        spinner.setOnItemSelectedListener(new RaceSelectionClickListener(races, trackingButton, spinner));
-
-
+        spinner.setOnItemSelectedListener(new RaceSelectionClickListener(races, spinner));
     }
 
-    private void setupStatusBarListener(final AtomicReference<String> username, final Button statusBar, final UIStatusCallback callback) {
+    private void setupStatusBarListener(final AtomicReference<String> username, final UIStatusCallback callback) {
         // Add on click listener to status bar in case user
         // tries to press it to fix the app after entering red state
         // NOTE: this will not be initially clickable.
-        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
-        statusBar.setOnClickListener(new View.OnClickListener() {
+        statusBar.get().setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // If we have failed mid-recording, pressing the
                 // status bar should try to restart the recorder
-                if (status.get() == Status.RED){
-                    createLocationRecorder(username.get(), callback, trackingButton);
+                if (status.get() == Status.RED) {
+                    createLocationRecorder(username.get(), callback);
                 }
             }
         });
     }
 
     private void setupTrackingButtonListener(final AtomicReference<String> username, final UIStatusCallback callback) {
-        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
-        trackingButton.setOnClickListener(new View.OnClickListener() {
+        trackingButton.get().setVisibility(View.INVISIBLE);
+        trackingButton.get().setClickable(false);     //Not clickable until race selected
+        trackingButton.get().setOnClickListener(new View.OnClickListener() {
             // When the user presses the button to begin recording,
             // lazily create the location recorder.
             @Override
             public void onClick(View v) {
-                createLocationRecorder(username.get(), callback, trackingButton);
+                if (haveGPSPermission()){
+                    createLocationRecorder(username.get(), callback);
+                    // No longer need to press this.
+                    getTrackingButton().setVisibility(View.INVISIBLE);
+                } else {
+                    requestGPSPermission();
+                }
             }
         });
-        trackingButton.setVisibility(View.INVISIBLE);
-        trackingButton.setClickable(false);     //Not clickable until race selected
+    }
+
+    private boolean haveGPSPermission(){
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestGPSPermission(){
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS},
+                                          LOCATION_REQUEST_CODE);
     }
 
     private ArrayList<String> getRaces(){
@@ -160,17 +176,15 @@ public class TrackingActivity extends AppCompatActivity {
      *
      * @param username The user's username (needed for transmitting data)
      * @param callback A callback to call when status changes between red, yellow, and green
-     * @param trackingButton The button that, when pressed, started location recording
      */
-    private void createLocationRecorder(String username, UIStatusCallback callback, Button trackingButton) {
+    private void createLocationRecorder(String username, UIStatusCallback callback ) {
         if (locRecorder == null || locRecorder.hasError()) {
             locRecorder = new LocationRecorder(username, TrackingActivity.this, callback);
             locRecorder.start();
-            trackingButton.setVisibility(View.INVISIBLE);
         }
     }
 
-    // Save actiivity state on pause
+    // Save activity state on pause
     @Override
     protected void onPause(){
         super.onPause();
@@ -215,16 +229,17 @@ public class TrackingActivity extends AppCompatActivity {
         username.set(restoredUsername);
         race.set(restoredRaceName);
 
-        final Button statusBar = (Button) findViewById(R.id.status_button);
-        final Button trackingButton = (Button) findViewById(R.id.trackingButton);
-        final UIStatusCallback callback = new TrackingStatusCallback(statusBar);
+        statusBar.set((Button) findViewById(R.id.status_button));
+        trackingButton.set((Button) findViewById(R.id.trackingButton));
+
+        final UIStatusCallback callback = new TrackingStatusCallback();
         final TextView currentRaceTextView = (TextView) findViewById(R.id.currentRace);
 
         if (restoredStatus.equals(Status.YELLOW) || restoredStatus.equals(Status.GREEN)){
             // In yellow and green states, user is already recording
             // so we should re-create the location recorder.
             currentRaceTextView.setText(getString(R.string.currentRace, restoredRaceName));
-            createLocationRecorder(restoredUsername, callback, trackingButton);
+            createLocationRecorder(restoredUsername, callback);
         }
     }
 
@@ -233,20 +248,45 @@ public class TrackingActivity extends AppCompatActivity {
         //Sorry, you can't leave this activity. Muhahahahaha
     }
 
-    private SharedPreferences getPrefs(){
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        TrackingStatusCallback callback = new TrackingStatusCallback();
+        switch(requestCode){
+            case LOCATION_REQUEST_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    createLocationRecorder(username.get(), callback);
+                    getTrackingButton().setVisibility(View.INVISIBLE);
+                } else {
+                    callback.red("Insufficient Permissions");
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+
+        private SharedPreferences getPrefs(){
         return getSharedPreferences("RNRPrefs", MODE_PRIVATE);
     }
 
+    public Button getStatusBar() {
+        return statusBar.get();
+    }
+
+    public Button getTrackingButton() {
+        return trackingButton.get();
+    }
 
     // Listener for when the user selects a race from the dropdown
     private class RaceSelectionClickListener implements AdapterView.OnItemSelectedListener {
         private final ArrayList<String> races;
-        private final Button trackingButton;
         private final Spinner spinner;
 
-        public RaceSelectionClickListener(ArrayList<String> races, Button trackingButton, Spinner spinner) {
+        public RaceSelectionClickListener(ArrayList<String> races, Spinner spinner) {
             this.races = races;
-            this.trackingButton = trackingButton;
             this.spinner = spinner;
         }
 
@@ -280,7 +320,7 @@ public class TrackingActivity extends AppCompatActivity {
                 @Override
                 public void success() {
                     race.set(raceName);
-                    trackingButton.setClickable(true);
+                    getTrackingButton().setClickable(true);
                     //Remove the spinner and hide it from view
                     hideSpinner();
                     //Display the current race name
@@ -290,8 +330,8 @@ public class TrackingActivity extends AppCompatActivity {
                 }
 
                 private void showTrackingButton(){
-                    trackingButton.setVisibility(View.VISIBLE);
-                    trackingButton.setClickable(true);
+                    getTrackingButton().setVisibility(View.VISIBLE);
+                    getTrackingButton().setClickable(true);
                 }
 
                 private void showText() {
@@ -318,22 +358,17 @@ public class TrackingActivity extends AppCompatActivity {
      * older target phones.
      */
     private class TrackingStatusCallback extends UIStatusCallback {
-        private final Button statusBar;
-
-        public TrackingStatusCallback(Button statusBar) {
-            this.statusBar = statusBar;
-        }
 
         @SuppressWarnings("deprecation")
         @Override
         public void greenCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                statusBar.setBackgroundColor(getResources().getColor(R.color.transmitting, null));
+                getStatusBar().setBackgroundColor(getResources().getColor(R.color.transmitting, null));
             } else{
-                statusBar.setBackgroundColor(getResources().getColor(R.color.transmitting));
+                getStatusBar().setBackgroundColor(getResources().getColor(R.color.transmitting));
             }
-            statusBar.setText(message);
-            statusBar.setClickable(false);
+            getStatusBar().setText(message);
+            getStatusBar().setClickable(false);
             status.set(Status.GREEN);
         }
 
@@ -341,12 +376,12 @@ public class TrackingActivity extends AppCompatActivity {
         @Override
         public void yellowCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                statusBar.setBackgroundColor(getResources().getColor(R.color.disconnected, null));
+                getStatusBar().setBackgroundColor(getResources().getColor(R.color.disconnected, null));
             } else {
-                statusBar.setBackgroundColor(getResources().getColor(R.color.disconnected));
+                getStatusBar().setBackgroundColor(getResources().getColor(R.color.disconnected));
             }
-            statusBar.setText(message);
-            statusBar.setClickable(false);
+            getStatusBar().setText(message);
+            getStatusBar().setClickable(false);
             status.set(Status.YELLOW);
         }
 
@@ -354,12 +389,12 @@ public class TrackingActivity extends AppCompatActivity {
         @Override
         public void redCallback(String message) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                statusBar.setBackgroundColor(getResources().getColor(R.color.cornellRedDark, null));
+                getStatusBar().setBackgroundColor(getResources().getColor(R.color.cornellRedDark, null));
             } else{
-                statusBar.setBackgroundColor(getResources().getColor(R.color.cornellRedDark));
+                getStatusBar().setBackgroundColor(getResources().getColor(R.color.cornellRedDark));
             }
-            statusBar.setText(message);
-            statusBar.setClickable(true);
+            getStatusBar().setText(message);
+            getStatusBar().setClickable(true);
             status.set(Status.RED);
         }
     }

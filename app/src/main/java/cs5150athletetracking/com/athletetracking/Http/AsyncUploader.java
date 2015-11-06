@@ -43,7 +43,6 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
         return response.optInt("success", 0);
     }
 
-
     @Override
     protected void onPostExecute(Integer result) {
         /* Sent LocationJson. Check for received confirmation */
