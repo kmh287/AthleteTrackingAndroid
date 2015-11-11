@@ -415,18 +415,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
-                ArrayList<String> raceList = new ArrayList<>(Arrays.asList("Foo", "Bar", "Baz", "The Very Long Name Four Miler that has a name so long that it wont fit maybe"));
-//                try {
-//                    // Get the list of races from the JSON
-//                    JSONArray races = this.response.getJSONArray("races");
-//                    for(int i = 0; i < races.length(); ++i){
-//                        raceList.add(races.getString(i));
-//                    }
-//                } catch (JSONException e){
-//                    passwordView.setError("Connection Problem. Please retry");
-//                    passwordView.requestFocus();
-//                    return;
-//                }
+                ArrayList<String> raceList = new ArrayList<>();
+                try {
+                    // Get the list of races from the JSON
+                    JSONArray races = this.response.getJSONArray("races");
+                    for(int i = 0; i < races.length(); ++i){
+                        raceList.add(races.getString(i));
+                    }
+                } catch (JSONException e){
+                    passwordView.setError("Connection Problem. Please retry");
+                    passwordView.requestFocus();
+                    return;
+                }
 
                 // If the login succeeds, start a new instance of TrackingActivity
                 Intent trackingIntent = new Intent(LoginActivity.this, TrackingActivity.class);

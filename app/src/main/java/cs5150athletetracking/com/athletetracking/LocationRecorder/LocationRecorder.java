@@ -1,13 +1,10 @@
 package cs5150athletetracking.com.athletetracking.LocationRecorder;
 
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -33,26 +30,18 @@ import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 public class LocationRecorder {
 
     private static final String TAG = "LocationRecorder";
-    //The amount of time the recorder should wait to get the location after unsuccessfully getting
-    // the location
-    private static final int NULL_LOC_SLEEP_PERIOD = 1000 * 2; // One minute //TODO change back
-    // The amount of time the recorder should wait to get the location after successfully getting
-    // the location
-    private static final int REGULAR_SLEEP_PERIOD = 1000 * 5; // Five seconds
-    // The number of location JSONs we intend to upload at once
-    private static final int LOC_DATA_BATCH_SIZE = 5; //TODO 100
-    // How many null locations will we accept before we indicate there's a problem
-    private static final int NULL_LOC_TOLERANCE = 2;
 
     public enum LocationRecorderError {
-        NONE, PERMISSIONS, NO_PROVIDER; /** maybe more later **/
+        NONE, PERMISSIONS, NO_PROVIDER, INTERRUPTED; /** maybe more later **/
 
         public String getErrorString(){
             switch(this){
                 case PERMISSIONS:
-                    return "Insufficient permissions";
+                    return "Insufficient permissions.";
                 case NO_PROVIDER:
-                    return "Unable to determine location";
+                    return "Unable to determine location. \n Press to restart.";
+                case INTERRUPTED:
+                    return "Too many other apps open. \n Press to restart";
                 default:
                     return "No error";
             }
@@ -60,10 +49,8 @@ public class LocationRecorder {
     }
 
     private final String username;
-    private final List<JSONObject> locData;
     private final AtomicReference<LocationRecorderError> error;
     private final ThreadPoolExecutor executor;
-    private final Activity activity;
     private final LocationTracker locationTracker;
     // The callback for changing the status of the activity.
     // Do not use the callback off of the UI thread! Use the methods in this class
@@ -72,15 +59,13 @@ public class LocationRecorder {
 
     public LocationRecorder(String username, Activity activity, UIStatusCallback callback) {
         this.username = username;
-        this.activity = activity;
         this.callback = callback;
-        this.locData = new ArrayList<>();
         this.error = new AtomicReference<>(LocationRecorderError.NONE);
         this.executor = getSingleThreadedThreadPoolExecutor();
-        this.locationTracker = getLocationTracker();
+        this.locationTracker = getLocationTracker(activity);
     }
 
-    private LocationTracker getLocationTracker(){
+    private LocationTracker getLocationTracker(Activity activity){
         LocationManager manager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
         boolean isGPSEnabled = manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         boolean isNetworkEnabled = manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
@@ -111,7 +96,7 @@ public class LocationRecorder {
             } catch (SecurityException e) {
                 fail(LocationRecorderError.PERMISSIONS, e);
             }
-            executor.execute(new LocationRecorderRunnable());
+            executor.execute(new LocationRecorderRunnable(username, locationTracker, callback));
             callback.green("Beginning tracking...");
         }
     }
@@ -136,36 +121,57 @@ public class LocationRecorder {
 
     protected class LocationRecorderRunnable implements Runnable {
 
+        //The amount of time the recorder should wait to get the location after unsuccessfully getting
+        // the location
+        private static final int NULL_LOC_SLEEP_PERIOD = 1000 * 2; // One minute //TODO change back
+        // The amount of time the recorder should wait to get the location after successfully getting
+        // the location
+        private static final int REGULAR_SLEEP_PERIOD = 1000 * 5; // Five seconds
+        // The number of location JSONs we intend to upload at once
+        private static final int LOC_DATA_BATCH_SIZE = 5; //TODO 100
+        // How many null locations will we accept before we indicate there's a problem
+        private static final int NULL_LOC_TOLERANCE = 2;
+
         private final AtomicInteger nullLocCounter = new AtomicInteger(0);
+        private final UIStatusCallback callback;
+        private final List<JSONObject> locData;
+        private final String username;
+        private final LocationTracker locationTracker;
+
+        public LocationRecorderRunnable(String username,
+                                        LocationTracker locationTracker,
+                                        UIStatusCallback callback){
+            this.username = username;
+            this.locationTracker = locationTracker;
+            this.callback = callback;
+            this.locData = new ArrayList<>();
+        }
 
         @Override
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
 //                asyncUploadBatch();
+//                locData.clear();
             }
-            if (haveLocationPermission()) {
-                if (locationTracker.hasLocation()){
-                    Location loc = locationTracker.getLocation();
-                    LocationJSON json = getLocationJSON(loc);
-                    locData.add(json);
-                    Log.i(TAG + "_thread", json.toString());
-                    nullLocCounter.set(0);
-                    callback.green("Transmitting");
-                    scheduleNextIteration(REGULAR_SLEEP_PERIOD);
-                } else {
-                    if(nullLocCounter.incrementAndGet() >= NULL_LOC_TOLERANCE){
-                        callback.yellow("Location Unavailable");
-                    }
-                    scheduleNextIteration(NULL_LOC_SLEEP_PERIOD);
-                }
+            if (locationTracker.hasLocation()){
+                Location loc = locationTracker.getLocation();
+                LocationJSON json = getLocationJSON(loc);
+                locData.add(json);
+                Log.i(TAG + "_thread", json.toString());
+                nullLocCounter.set(0);
+                callback.green("Transmitting");
+                scheduleNextIteration(REGULAR_SLEEP_PERIOD);
             } else {
-                fail(LocationRecorderError.PERMISSIONS);
+                if(nullLocCounter.incrementAndGet() >= NULL_LOC_TOLERANCE){
+                    callback.yellow("Location Unavailable");
+                }
+                scheduleNextIteration(NULL_LOC_SLEEP_PERIOD);
             }
         }
 
         private void asyncUploadBatch(){
             try {
-                LocationUploadJSON uploadJSON = null;
+                LocationUploadJSON uploadJSON;
                 synchronized (locData) {
                     uploadJSON = new LocationUploadJSON(username, locData);
                 }
@@ -185,7 +191,7 @@ public class LocationRecorder {
                 asyncUploader.execute(uploadJSON);
             } catch (JSONException e){
                 Log.e(TAG, "Failure building Upload JSON", e);
-                callback.red("Upload Error");
+                callback.yellow("Upload Error");
             }
         }
 
@@ -193,6 +199,8 @@ public class LocationRecorder {
             if (!Thread.currentThread().isInterrupted()) {
                 ThreadUtil.sleep(delay);
                 executor.execute(this);
+            } else {
+                fail(LocationRecorderError.INTERRUPTED);
             }
         }
 
@@ -202,17 +210,6 @@ public class LocationRecorder {
                                     loc.getLongitude(), loc.getAltitude());
         }
 
-        private boolean haveLocationPermission() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                        == PackageManager.PERMISSION_GRANTED
-                        || activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
-                        == PackageManager.PERMISSION_GRANTED;
-            } else {
-                int res = activity.checkCallingOrSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
-                return res == PackageManager.PERMISSION_GRANTED;
-            }
-        }
     }
 
 }
