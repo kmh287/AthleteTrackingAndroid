@@ -12,7 +12,7 @@ import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
  * JSONObjects passed in will be uploaded *separately* but still
  * asynchronously
  */
-public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
+public class AsyncUploader extends AsyncTask<JSONObject, String, Boolean> {
 
     private static final String TAG = "AsyncUploader";
     //An optional callback to be called on success or failure of upload
@@ -33,21 +33,15 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
     }
 
     @Override
-    protected Integer doInBackground(JSONObject... params) {
+    protected Boolean doInBackground(JSONObject... params) {
 
         // Only upload the first param passed in
         // No need for multiple since they cna be bundled as JSON
         // arrays.
         uploader.upload(params[0]);
         JSONObject response = uploader.getResponseJSON();
-        return response.optInt("success", 0);
-    }
-
-    @Override
-    protected void onPostExecute(Integer result) {
-        /* Sent LocationJson. Check for received confirmation */
-
-        if(result > 0) {
+        boolean result =  response.optBoolean("success", false);
+        if(result) {
             if (getCallBack() != null)
                 getCallBack().success();
         } else {
@@ -55,5 +49,6 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
             if (getCallBack() != null)
                 getCallBack().failure();
         }
+        return result;
     }
 }

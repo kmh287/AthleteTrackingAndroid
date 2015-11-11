@@ -17,12 +17,15 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
 import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
 import cs5150athletetracking.com.athletetracking.Http.AsyncUploader;
+import cs5150athletetracking.com.athletetracking.JSONFormats.RaceSelectionJSON;
 import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecorder;
 import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
 
@@ -297,18 +300,18 @@ public class TrackingActivity extends AppCompatActivity {
             callBack.success();
             //TODO reove above call and uncomment below code
 
-//            asyncUploader.setCallBack(callBack);
-//
-//            // Build RaceSelectionJSON
-//            RaceSelectionJSON json;
-//            try {
-//                String race = races.get(position);
-//                json = new RaceSelectionJSON(username.get(), race);
-//            } catch (JSONException e){
-//                callBack.failure();
-//                return;
-//            }
-//            asyncUploader.execute(json);
+            asyncUploader.setCallBack(callBack);
+
+            // Build RaceSelectionJSON
+            RaceSelectionJSON json;
+            try {
+                String race = races.get(position);
+                json = new RaceSelectionJSON(username.get(), race);
+            } catch (JSONException e){
+                callBack.failure();
+                return;
+            }
+            asyncUploader.execute(json);
         }
 
         @Override
