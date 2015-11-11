@@ -379,34 +379,20 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
-//            try {
-//                LoginJSON login = new LoginJSON(email, password);
-//                Uploader uploader = new Uploader();
-//                int res = uploader.upload(login);
-//                if (res > 0){
-//                    JSONObject response = uploader.getResponseJSON();
-//                    this.response = response;
-//                    return response.getBoolean("success");
-//                } else {
-//                    return false;
-//                }
-//            } catch (JSONException e){
-//                return false;
-//            }
-
-
-            // TODO delete eventually
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(email)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(password);
+            try {
+                LoginJSON login = new LoginJSON(email, password);
+                Uploader uploader = new Uploader();
+                int res = uploader.upload(login);
+                if (res > 0){
+                    JSONObject response = uploader.getResponseJSON();
+                    this.response = response;
+                    return response != null && response.optBoolean("success",false);
+                } else {
+                    return false;
                 }
+            } catch (JSONException e){
+                return false;
             }
-
-            //We will not register accounts in the app
-            //TODO change to false otherwise anyone can get through !!!!
-            return true;
         }
 
         @Override
@@ -416,6 +402,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             if (success) {
                 ArrayList<String> raceList = new ArrayList<>();
+                raceList.add("<SELECT A RACE>");
                 try {
                     // Get the list of races from the JSON
                     JSONArray races = this.response.getJSONArray("races");

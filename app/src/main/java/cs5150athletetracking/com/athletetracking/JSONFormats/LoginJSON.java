@@ -15,7 +15,7 @@ public class LoginJSON extends AbstractJSONFormat {
         this.put(SERIALIZE_KEY.TYPE.toString(), REQUEST_TYPE.LOGIN.ordinal());
         this.put(SERIALIZE_KEY.USERNAME.toString(), username);
         this.put(SERIALIZE_KEY.PASSWORD.toString(), password);
-        this.put(SERIALIZE_KEY.TIMESTAMP.toString(), password);
+        this.put(SERIALIZE_KEY.TIMESTAMP.toString(), timestamp);
     }
 
 }

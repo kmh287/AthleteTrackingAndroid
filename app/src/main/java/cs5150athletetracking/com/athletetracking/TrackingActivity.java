@@ -28,6 +28,7 @@ import cs5150athletetracking.com.athletetracking.Http.AsyncUploader;
 import cs5150athletetracking.com.athletetracking.JSONFormats.RaceSelectionJSON;
 import cs5150athletetracking.com.athletetracking.LocationRecorder.LocationRecorder;
 import cs5150athletetracking.com.athletetracking.Util.PreferenceUtil;
+import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
 public class TrackingActivity extends AppCompatActivity {
 
@@ -322,14 +323,19 @@ public class TrackingActivity extends AppCompatActivity {
             return new ResultCallable() {
                 @Override
                 public void success() {
-                    race.set(raceName);
-                    getTrackingButton().setClickable(true);
-                    //Remove the spinner and hide it from view
-                    hideSpinner();
-                    //Display the current race name
-                    showText();
-                    // Display the button to start tracking
-                    showTrackingButton();
+                    ThreadUtil.runOnMainThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            race.set(raceName);
+                            getTrackingButton().setClickable(true);
+                            //Remove the spinner and hide it from view
+                            hideSpinner();
+                            //Display the current race name
+                            showText();
+                            // Display the button to start tracking
+                            showTrackingButton();
+                        }
+                    });
                 }
 
                 private void showTrackingButton(){

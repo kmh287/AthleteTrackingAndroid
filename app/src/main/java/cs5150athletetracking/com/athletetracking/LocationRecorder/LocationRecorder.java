@@ -150,8 +150,8 @@ public class LocationRecorder {
         @Override
         public void run() {
             if (locData.size() >= LOC_DATA_BATCH_SIZE) {
-//                asyncUploadBatch();
-//                locData.clear();
+                asyncUploadBatch();
+                locData.clear();
             }
             if (locationTracker.hasLocation()){
                 Location loc = locationTracker.getLocation();
@@ -159,7 +159,7 @@ public class LocationRecorder {
                 locData.add(json);
                 Log.i(TAG + "_thread", json.toString());
                 nullLocCounter.set(0);
-                callback.green("Transmitting");
+//                callback.green("Transmitting");
                 scheduleNextIteration(REGULAR_SLEEP_PERIOD);
             } else {
                 if(nullLocCounter.incrementAndGet() >= NULL_LOC_TOLERANCE){

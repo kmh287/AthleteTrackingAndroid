@@ -40,7 +40,7 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Boolean> {
         // arrays.
         uploader.upload(params[0]);
         JSONObject response = uploader.getResponseJSON();
-        boolean result =  response.optBoolean("success", false);
+        boolean result = (response != null) && response.optBoolean("success", false);
         if(result) {
             if (getCallBack() != null)
                 getCallBack().success();
