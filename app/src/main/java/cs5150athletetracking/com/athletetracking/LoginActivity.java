@@ -92,12 +92,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
-        // This is for when we begin testing the app
-        // This is the company Kevin works for, so hopefully we can get a sweet deal
-        // on their testing SDK.
-        startTestfire();        //TODO remove before final release
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
@@ -137,28 +131,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 startActivity(intent);
             }
         });
-    }
-
-    /**
-     * This starts our user testing SDK.
-     */
-    private void startTestfire(){
-
-        Resources res = getResources();
-
-        TestfireParams params = TestfireParamsBuilder.testfireParams()
-                .withApiKey(res.getString(R.string.testfire_api_key))
-                .withAppId(res.getString(R.string.testfire_app_id))
-                .withApplication(this)
-                .withCrashReporting(TestfireParamCrashReporting.ENABLED)
-                .withGesture(TestfireParamGesture.NOTIFICATION)
-                .withVideoQuality(TestfireParamVideoQuality.MEDIUM)
-                .withSettingsMode(TestfireParamSettings.ENABLED)
-                .withLogIntegration(TestfireParamLogIntegration.LOGCAT)
-                .withLogLevel(TestfireParamLogLevel.DEBUG)
-                .withLocationTracking(TestfireParamLocationTracking.ENABLED)
-                .build();
-        Testfire.initialize(params);
     }
 
     private void populateAutoComplete() {
