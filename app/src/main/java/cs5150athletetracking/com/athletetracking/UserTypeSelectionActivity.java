@@ -2,6 +2,7 @@ package cs5150athletetracking.com.athletetracking;
 
 import android.content.Intent;
 import android.content.res.Resources;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -25,6 +26,8 @@ import io.testfire.TestfireParamsBuilder;
  */
 public class UserTypeSelectionActivity extends AppCompatActivity {
 
+    private static final String SPECTATOR_URL = "http://52.91.63.121/main";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,7 +46,8 @@ public class UserTypeSelectionActivity extends AppCompatActivity {
             @Override
             // When the spectator button is clicked, start a new SpectatorActivity
             public void onClick(View v) {
-                startActivity(new Intent(UserTypeSelectionActivity.this, SpectatorActivity.class));
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(SPECTATOR_URL));
+                startActivity(intent);
             }
         });
     }

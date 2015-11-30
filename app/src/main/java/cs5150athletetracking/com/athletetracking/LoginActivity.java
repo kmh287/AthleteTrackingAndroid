@@ -70,15 +70,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     /**
      * URL to registration page
      */
-    private static final String REGISTRATION_URL = "http://www.google.com"; //TODO change, obviously
+    private static final String REGISTRATION_URL = "http://52.91.63.121/users/new";
 
-    /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hellohello", "bar@example.com:world"
-    };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
