@@ -19,12 +19,22 @@ public class PreferenceUtil {
         editor.commit();
     }
 
+    public static void writeToPrefs(SharedPreferences prefs, String key, boolean value){
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(key, value);
+        editor.commit();
+    }
+
     public static int readPrefs(SharedPreferences prefs, String key, int fallback){
         return prefs.getInt(key, fallback);
     }
 
     public static String readPrefs(SharedPreferences prefs, String key, String fallback){
         return prefs.getString(key, fallback);
+    }
+
+    public static boolean readPrefs(SharedPreferences prefs, String key, boolean fallback){
+        return prefs.getBoolean(key, fallback);
     }
 
     public static void clearPref(SharedPreferences prefs, String key){

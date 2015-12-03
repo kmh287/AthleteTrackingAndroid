@@ -83,6 +83,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private View progressView;
     private View loginFormView;
 
+    private boolean unableToConnect = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -218,6 +220,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // perform the user login attempt.
             showProgress(true);
             authTask = new UserLoginTask(email, password);
+            hideRegistration();
             authTask.execute((Void) null);
         }
     }
@@ -227,7 +230,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private boolean isPasswordValid(String password) {
-        return password.length() >= 8;
+        return password.length() >= 1;
     }
 
     /**
@@ -320,6 +323,22 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         emailView.setAdapter(adapter);
     }
 
+    private void hideRegistration(){
+        TextView registrationText = (TextView) findViewById(R.id.textView);
+        Button registrationButton = (Button) findViewById(R.id.register_button);
+        registrationText.setVisibility(View.INVISIBLE);
+        registrationButton.setVisibility(View.INVISIBLE);
+        registrationButton.setClickable(false);
+    }
+
+    private void showRegistration(){
+        TextView registrationText = (TextView) findViewById(R.id.textView);
+        Button registrationButton = (Button) findViewById(R.id.register_button);
+        registrationText.setVisibility(View.VISIBLE);
+        registrationButton.setVisibility(View.VISIBLE);
+        registrationButton.setClickable(true);
+    }
+
     /**
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
@@ -342,7 +361,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
 
             try {
                 LoginJSON login = new LoginJSON(email, password);
@@ -353,6 +371,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     this.response = response;
                     return response != null && response.optBoolean("success",false);
                 } else {
+                    unableToConnect = true;
                     return false;
                 }
             } catch (JSONException e){
@@ -377,6 +396,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 } catch (JSONException e){
                     passwordView.setError("Connection Problem. Please retry");
                     passwordView.requestFocus();
+                    showRegistration();
                     return;
                 }
 
@@ -386,8 +406,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 trackingIntent.putStringArrayListExtra("races", raceList);
                 startActivity(trackingIntent);
             } else {
-                passwordView.setError(getString(R.string.error_incorrect_password));
+                if (unableToConnect) {
+                    passwordView.setError("Connection Problem. Please retry");
+                } else {
+                    passwordView.setError(getString(R.string.error_incorrect_password));
+                }
                 passwordView.requestFocus();
+                showRegistration();
             }
         }
 

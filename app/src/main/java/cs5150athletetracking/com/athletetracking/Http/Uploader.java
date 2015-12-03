@@ -17,7 +17,7 @@ public class Uploader {
 
     private static final String INPUT_LABEL = "params";
     private static final String TAG = "Uploader";
-    private static final String URL_STRING = "http://ec2-52-91-63-121.compute-1.amazonaws.com/php/db_interface.php";
+    private static final String URL_STRING = "http://ec2-52-91-63-121.compute-1.amazonaws.com/php/db_interface_processed.php";
     private static final int END_OF_STREAM = -1;
     private static final int HTTP_OK = 200;
     private static final int SUCCESS = 1;

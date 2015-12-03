@@ -121,14 +121,14 @@ public class LocationRecorder {
 
     protected class LocationRecorderRunnable implements Runnable {
 
-        //The amount of time the recorder should wait to get the location after unsuccessfully getting
+        // The amount of time the recorder should wait to get the location after unsuccessfully getting
         // the location
-        private static final int NULL_LOC_SLEEP_PERIOD = 1000 * 2; // One minute //TODO change back
+        private static final int NULL_LOC_SLEEP_PERIOD = 1000 * 60; // One minute
         // The amount of time the recorder should wait to get the location after successfully getting
         // the location
         private static final int REGULAR_SLEEP_PERIOD = 1000 * 5; // Five seconds
         // The number of location JSONs we intend to upload at once
-        private static final int LOC_DATA_BATCH_SIZE = 5; //TODO 100
+        private static final int LOC_DATA_BATCH_SIZE = 1;
         // How many null locations will we accept before we indicate there's a problem
         private static final int NULL_LOC_TOLERANCE = 2;
 
@@ -157,9 +157,7 @@ public class LocationRecorder {
                 Location loc = locationTracker.getLocation();
                 LocationJSON json = getLocationJSON(loc);
                 locData.add(json);
-                Log.i(TAG + "_thread", json.toString());
                 nullLocCounter.set(0);
-//                callback.green("Transmitting");
                 scheduleNextIteration(REGULAR_SLEEP_PERIOD);
             } else {
                 if(nullLocCounter.incrementAndGet() >= NULL_LOC_TOLERANCE){
@@ -197,8 +195,10 @@ public class LocationRecorder {
 
         private void scheduleNextIteration(long delay) {
             if (!Thread.currentThread().isInterrupted()) {
-                ThreadUtil.sleep(delay);
-                executor.execute(this);
+                if (!hasError()) {
+                    ThreadUtil.sleep(delay);
+                    executor.execute(this);
+                }
             } else {
                 fail(LocationRecorderError.INTERRUPTED);
             }

@@ -37,6 +37,7 @@ public class TrackingActivity extends AppCompatActivity {
     private static final String LOCATION_TRACKER_STATUS_PREF = "locationTrackerStatus";
     private static final String USERNAME_PREF = "username";
     private static final String RACE_PREF = "race";
+    private static final String RESTORE_PREF = "restore";
     public static final int LOCATION_REQUEST_CODE = 47;
 
     private enum Status{
@@ -103,7 +104,7 @@ public class TrackingActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(R.layout.spinner_layout);
         spinner.setAdapter(adapter);
         spinner.setSelection(0, false);
-        spinner.setOnItemSelectedListener(new RaceSelectionClickListener(races, spinner));
+        spinner.setOnItemSelectedListener(new RaceSelectionClickListener(races));
     }
 
     private void setupStatusBarListener(final AtomicReference<String> username, final UIStatusCallback callback) {
@@ -120,6 +121,7 @@ public class TrackingActivity extends AppCompatActivity {
                 }
             }
         });
+        statusBar.get().setClickable(false);
     }
 
     private void setupTrackingButtonListener(final AtomicReference<String> username, final UIStatusCallback callback) {
@@ -131,14 +133,30 @@ public class TrackingActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (haveGPSPermission()){
+                    //Remove the spinner and hide it from view
+                    hideSpinner();
+                    //Display the current race name
+                    showText();
                     createLocationRecorder(username.get(), callback);
                     // No longer need to press this.
                     getTrackingButton().setVisibility(View.INVISIBLE);
+                    statusBar.get().setClickable(true);
                 } else {
                     requestGPSPermission();
                 }
             }
         });
+    }
+
+    private void showText() {
+        TextView currentRaceTextView = (TextView) findViewById(R.id.currentRace);
+        currentRaceTextView.setText(getString(R.string.currentRace, race.get()));
+    }
+
+    private void hideSpinner() {
+        final Spinner spinner = (Spinner) findViewById(R.id.spinner);
+        spinner.setClickable(false);
+        spinner.setVisibility(View.INVISIBLE);
     }
 
     private boolean haveGPSPermission(){
@@ -192,9 +210,10 @@ public class TrackingActivity extends AppCompatActivity {
     @Override
     protected void onPause(){
         super.onPause();
-        PreferenceUtil.writeToPrefs(getPrefs(), "locationTrackerStatus", status.get().ordinal());
-        PreferenceUtil.writeToPrefs(getPrefs(), "username", username.get());
-        PreferenceUtil.writeToPrefs(getPrefs(), "race", race.get());
+//        PreferenceUtil.writeToPrefs(getPrefs(), RESTORE_PREF, true);
+//        PreferenceUtil.writeToPrefs(getPrefs(), LOCATION_TRACKER_STATUS_PREF, status.get().ordinal());
+//        PreferenceUtil.writeToPrefs(getPrefs(), USERNAME_PREF, username.get());
+//        PreferenceUtil.writeToPrefs(getPrefs(), RACE_PREF, race.get());
     }
 
     /**
@@ -204,13 +223,19 @@ public class TrackingActivity extends AppCompatActivity {
     @Override
     protected void onResume(){
         super.onResume();
-        SharedPreferences prefs = getPrefs();
+//        SharedPreferences prefs = getPrefs();
+//        boolean needToRestore = PreferenceUtil.readPrefs(prefs, RESTORE_PREF, false);
+//        if(needToRestore){
+//            restoreState(prefs);
+//            PreferenceUtil.writeToPrefs(prefs, RESTORE_PREF, false);
+//        }
+    }
+
+    private void restoreState(SharedPreferences prefs) {
         int statusInt = PreferenceUtil.readPrefs(prefs, LOCATION_TRACKER_STATUS_PREF, -1);
         String restoredUsername = PreferenceUtil.readPrefs(prefs, USERNAME_PREF, "");
         String restoredRaceName = PreferenceUtil.readPrefs(prefs, RACE_PREF, "");
-        PreferenceUtil.clearPref(prefs, LOCATION_TRACKER_STATUS_PREF);
-        PreferenceUtil.clearPref(prefs, USERNAME_PREF);
-        PreferenceUtil.clearPref(prefs, RACE_PREF);
+
 
         if (statusInt == -1){
             // IF we somehow can't restore the state, we should
@@ -287,19 +312,20 @@ public class TrackingActivity extends AppCompatActivity {
     // Listener for when the user selects a race from the dropdown
     private class RaceSelectionClickListener implements AdapterView.OnItemSelectedListener {
         private final ArrayList<String> races;
-        private final Spinner spinner;
 
-        public RaceSelectionClickListener(ArrayList<String> races, Spinner spinner) {
+        public RaceSelectionClickListener(ArrayList<String> races) {
             this.races = races;
-            this.spinner = spinner;
         }
 
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             AsyncUploader asyncUploader = new AsyncUploader();
             ResultCallable callBack = RaceSelectionResultCallback(races.get(position));
-            callBack.success();
-            //TODO reove above call and uncomment below code
+
+            if (position == 0){
+                callBack.failure();
+                return;
+            }
 
             asyncUploader.setCallBack(callBack);
 
@@ -327,11 +353,6 @@ public class TrackingActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             race.set(raceName);
-                            getTrackingButton().setClickable(true);
-                            //Remove the spinner and hide it from view
-                            hideSpinner();
-                            //Display the current race name
-                            showText();
                             // Display the button to start tracking
                             showTrackingButton();
                         }
@@ -343,19 +364,14 @@ public class TrackingActivity extends AppCompatActivity {
                     getTrackingButton().setClickable(true);
                 }
 
-                private void showText() {
-                    TextView currentRaceTextView = (TextView) findViewById(R.id.currentRace);
-                    currentRaceTextView.setText(getString(R.string.currentRace, raceName));
-                }
-
-                private void hideSpinner() {
-                    spinner.setClickable(false);
-                    spinner.setVisibility(View.INVISIBLE);
+                private void hideTrackingButton(){
+                    getTrackingButton().setVisibility(View.INVISIBLE);
+                    getTrackingButton().setClickable(false);
                 }
 
                 @Override
                 public void failure() {
-                    // We do nothing here. Let the user keep trying.
+                    hideTrackingButton();
                 }
             };
         }
