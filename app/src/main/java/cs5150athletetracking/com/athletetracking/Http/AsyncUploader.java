@@ -12,7 +12,7 @@ import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
  * JSONObjects passed in will be uploaded *separately* but still
  * asynchronously
  */
-public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
+public class AsyncUploader extends AsyncTask<JSONObject, String, Boolean> {
 
     private static final String TAG = "AsyncUploader";
     //An optional callback to be called on success or failure of upload
@@ -33,28 +33,27 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Integer> {
     }
 
     @Override
-    protected Integer doInBackground(JSONObject... params) {
-        int result = 0;
+    protected Boolean doInBackground(JSONObject... params) {
 
-        for (JSONObject param : params) {
-            result += uploader.upload(param);
-        }
-
-        return result;
-    }
-
-
-    @Override
-    protected void onPostExecute(Integer result) {
-        /* Sent LocationJson. Check for received confirmation */
-
-        if(result > 0) {
+        // Only upload the first param passed in
+        // No need for multiple since they cna be bundled as JSON
+        // arrays.
+        uploader.upload(params[0]);
+        JSONObject response = uploader.getResponseJSON();
+        boolean result = (response != null) && response.optBoolean("success", false);
+        if(result) {
             if (getCallBack() != null)
                 getCallBack().success();
         } else {
             Log.e(TAG, "Failed to confirm communication with server.");
-            if (getCallBack() != null)
-                getCallBack().failure();
+            if (getCallBack() != null) {
+                if (response == null) {
+                    getCallBack().failure();
+                } else {
+                    getCallBack().failure();
+                }
+            }
         }
+        return result;
     }
 }

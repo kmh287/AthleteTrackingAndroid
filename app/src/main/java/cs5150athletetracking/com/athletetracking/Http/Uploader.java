@@ -3,6 +3,7 @@ package cs5150athletetracking.com.athletetracking.Http;
 
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -16,13 +17,14 @@ public class Uploader {
 
     private static final String INPUT_LABEL = "params";
     private static final String TAG = "Uploader";
-    private static final String URL_STRING = "http://ec2-54-165-208-160.compute-1.amazonaws.com/php/test_server.php";
+    private static final String URL_STRING = "http://ec2-52-91-63-121.compute-1.amazonaws.com/php/db_interface_processed.php";
     private static final int END_OF_STREAM = -1;
     private static final int HTTP_OK = 200;
     private static final int SUCCESS = 1;
     private static final int FAILURE = 0;
 
     private String response;
+    private JSONObject responseJSON;
 
     public Integer upload(JSONObject json){
         Integer result = FAILURE;
@@ -34,12 +36,11 @@ public class Uploader {
             // Open up a connection, create appropriate header, and send request
             URL url = new URL(URL_STRING);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setDoOutput(true);
             urlConnection.setConnectTimeout(1000*30 /* thirty seconds */);
             urlConnection.setRequestMethod("POST");
-            urlConnection.setRequestProperty("Content-Type", "application/json");
+            urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             urlConnection.setRequestProperty("Content-Length", String.valueOf(jsonPostBytes.length));
-//            urlConnection.setDoOutput(true);
+            urlConnection.setDoOutput(true);
             urlConnection.getOutputStream().write(jsonPostBytes);
 
             int statusCode = urlConnection.getResponseCode();
@@ -52,7 +53,6 @@ public class Uploader {
                     message.append( (char)c);
 
                 response = message.toString();
-                //TODO parse return JSON
                 Log.d(TAG, response);
                 result = SUCCESS;
             } else {
@@ -68,6 +68,17 @@ public class Uploader {
 
     public String getResponse() {
         return response;
+    }
+
+    public JSONObject getResponseJSON(){
+        try {
+            if (responseJSON == null) {
+                responseJSON = new JSONObject(response);
+            }
+            return responseJSON;
+        } catch (JSONException e){
+            return null;
+        }
     }
 
 }

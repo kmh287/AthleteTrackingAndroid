@@ -2,44 +2,20 @@ package cs5150athletetracking.com.athletetracking.JSONFormats;
 
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
-public class LoginJSON extends JSONObject {
+public class LoginJSON extends AbstractJSONFormat {
 
-    private final String TAG = "LoginJSON";
-    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", Locale.US);
-
-    private enum SERIALIZE_KEY{
-        USERNAME, PASSWORD, TIMESTAMP;
-
-        @Override
-        public String toString(){
-            switch(this){
-                case USERNAME:
-                    return "user";
-                case PASSWORD:
-                    return "pass";
-                case TIMESTAMP:
-                    return "t";
-                default:
-                    return "";
-            }
-        }
-    }
+    private static final String TAG = "LoginJSON";
 
     public LoginJSON(String username, String password) throws JSONException{
         String timestamp = format.format(new Date());
+
+        this.put(SERIALIZE_KEY.TYPE.toString(), REQUEST_TYPE.LOGIN.ordinal());
         this.put(SERIALIZE_KEY.USERNAME.toString(), username);
         this.put(SERIALIZE_KEY.PASSWORD.toString(), password);
-        this.put(SERIALIZE_KEY.TIMESTAMP.toString(), password);
+        this.put(SERIALIZE_KEY.TIMESTAMP.toString(), timestamp);
     }
-
-
-
-
 
 }

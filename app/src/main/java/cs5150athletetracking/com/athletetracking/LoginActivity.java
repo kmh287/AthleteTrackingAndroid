@@ -29,13 +29,20 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import cs5150athletetracking.com.athletetracking.Http.Uploader;
+import cs5150athletetracking.com.athletetracking.JSONFormats.LoginJSON;
 import io.testfire.Testfire;
 import io.testfire.TestfireParamCrashReporting;
 import io.testfire.TestfireParamGesture;
@@ -63,15 +70,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     /**
      * URL to registration page
      */
-    private static final String REGISTRATION_URL = "http://www.google.com"; //TODO change, obviously
+    private static final String REGISTRATION_URL = "http://52.91.63.121/users/new";
 
-    /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hellohello", "bar@example.com:world"
-    };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -83,14 +83,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private View progressView;
     private View loginFormView;
 
+    private boolean unableToConnect = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
-        // This is for when we begin testing the app
-        // This is the company Kevin works for, so hopefully we can get a sweet deal
-        // on their testing SDK.
-        startTestfire();        //TODO remove before final release
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
@@ -130,28 +126,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 startActivity(intent);
             }
         });
-    }
-
-    /**
-     * This starts our user testing SDK.
-     */
-    private void startTestfire(){
-
-        Resources res = getResources();
-
-        TestfireParams params = TestfireParamsBuilder.testfireParams()
-                .withApiKey(res.getString(R.string.testfire_api_key))
-                .withAppId(res.getString(R.string.testfire_app_id))
-                .withApplication(this)
-                .withCrashReporting(TestfireParamCrashReporting.ENABLED)
-                .withGesture(TestfireParamGesture.NOTIFICATION)
-                .withVideoQuality(TestfireParamVideoQuality.MEDIUM)
-                .withSettingsMode(TestfireParamSettings.ENABLED)
-                .withLogIntegration(TestfireParamLogIntegration.LOGCAT)
-                .withLogLevel(TestfireParamLogLevel.DEBUG)
-                .withLocationTracking(TestfireParamLocationTracking.ENABLED)
-                .build();
-        Testfire.initialize(params);
     }
 
     private void populateAutoComplete() {
@@ -246,6 +220,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // perform the user login attempt.
             showProgress(true);
             authTask = new UserLoginTask(email, password);
+            hideRegistration();
             authTask.execute((Void) null);
         }
     }
@@ -255,7 +230,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private boolean isPasswordValid(String password) {
-        return password.length() >= 8;
+        return password.length() >= 1;
     }
 
     /**
@@ -348,6 +323,22 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         emailView.setAdapter(adapter);
     }
 
+    private void hideRegistration(){
+        TextView registrationText = (TextView) findViewById(R.id.textView);
+        Button registrationButton = (Button) findViewById(R.id.register_button);
+        registrationText.setVisibility(View.INVISIBLE);
+        registrationButton.setVisibility(View.INVISIBLE);
+        registrationButton.setClickable(false);
+    }
+
+    private void showRegistration(){
+        TextView registrationText = (TextView) findViewById(R.id.textView);
+        Button registrationButton = (Button) findViewById(R.id.register_button);
+        registrationText.setVisibility(View.VISIBLE);
+        registrationButton.setVisibility(View.VISIBLE);
+        registrationButton.setClickable(true);
+    }
+
     /**
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
@@ -356,12 +347,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         private final String email;
         private final String password;
-        private final ThreadPoolExecutor executor;
+        private JSONObject response;
 
         UserLoginTask(String email, String password) {
             this.email = email;
             this.password = password;
-            this.executor = getSingleThreadedThreadPoolExecutor();
         }
 
         private ThreadPoolExecutor getSingleThreadedThreadPoolExecutor() {
@@ -371,34 +361,22 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
 
-//            try {
-//                // Simulate network access.
-//                LoginJSON login = new LoginJSON(email, password);
-//                Uploader uploader = new Uploader();
-//                int res = uploader.upload(login);
-//                if (res > 0){
-//                    String reply = uploader.getResponse();
-//                    return "OK".equals(reply);
-//                }
-//            } catch (JSONException e){
-//                return false;
-//            }
-
-
-            // TODO delete eventually
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(email)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(password);
+            try {
+                LoginJSON login = new LoginJSON(email, password);
+                Uploader uploader = new Uploader();
+                int res = uploader.upload(login);
+                if (res > 0){
+                    JSONObject response = uploader.getResponseJSON();
+                    this.response = response;
+                    return response != null && response.optBoolean("success",false);
+                } else {
+                    unableToConnect = true;
+                    return false;
                 }
+            } catch (JSONException e){
+                return false;
             }
-
-            //We will not register accounts in the app
-            //TODO change to false otherwise anyone can get through !!!!
-            return true;
         }
 
         @Override
@@ -407,13 +385,34 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
+                ArrayList<String> raceList = new ArrayList<>();
+                raceList.add("<SELECT A RACE>");
+                try {
+                    // Get the list of races from the JSON
+                    JSONArray races = this.response.getJSONArray("races");
+                    for(int i = 0; i < races.length(); ++i){
+                        raceList.add(races.getString(i));
+                    }
+                } catch (JSONException e){
+                    passwordView.setError("Connection Problem. Please retry");
+                    passwordView.requestFocus();
+                    showRegistration();
+                    return;
+                }
+
                 // If the login succeeds, start a new instance of TrackingActivity
                 Intent trackingIntent = new Intent(LoginActivity.this, TrackingActivity.class);
                 trackingIntent.putExtra("username", email);
+                trackingIntent.putStringArrayListExtra("races", raceList);
                 startActivity(trackingIntent);
             } else {
-                passwordView.setError(getString(R.string.error_incorrect_password));
+                if (unableToConnect) {
+                    passwordView.setError("Connection Problem. Please retry");
+                } else {
+                    passwordView.setError(getString(R.string.error_incorrect_password));
+                }
                 passwordView.requestFocus();
+                showRegistration();
             }
         }
 
