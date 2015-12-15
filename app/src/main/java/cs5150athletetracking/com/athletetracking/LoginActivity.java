@@ -44,17 +44,6 @@ import cs5150athletetracking.com.athletetracking.JSONFormats.LoginJSON;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
-//import io.testfire.Testfire;
-//import io.testfire.TestfireParamCrashReporting;
-//import io.testfire.TestfireParamGesture;
-//import io.testfire.TestfireParamLocationTracking;
-//import io.testfire.TestfireParamLogIntegration;
-//import io.testfire.TestfireParamLogLevel;
-//import io.testfire.TestfireParamSettings;
-//import io.testfire.TestfireParamVideoQuality;
-//import io.testfire.TestfireParams;
-//import io.testfire.TestfireParamsBuilder;
-
 /**
  * This activity proves a login screen that offers login via email/password
  * This will allow athletes to sign into the syste,

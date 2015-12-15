@@ -40,27 +40,4 @@ public class UserTypeSelectionActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * This starts our user testing SDK.
-     */
-//    private void startTestfire(){
-//
-//        Resources res = getResources();
-//
-//        TestfireParams params = TestfireParamsBuilder.testfireParams()
-//                                                     .withApiKey("QoZgEyzof1eKC8811iqa")
-//                                                     .withAppId("gjiGFG7z_H_JoJ-CVzyx")
-//                                                     .withApplication(this)
-//                                                     .withCrashReporting(TestfireParamCrashReporting.ENABLED)
-//                                                     .withGesture(TestfireParamGesture.NOTIFICATION)
-//                                                     .withVideoQuality(TestfireParamVideoQuality.MEDIUM)
-//                                                     .withSettingsMode(TestfireParamSettings.ENABLED)
-//                                                     .withLogIntegration(TestfireParamLogIntegration.LOGCAT)
-//                                                     .withLogLevel(TestfireParamLogLevel.DEBUG)
-//                                                     .withRecordMode(TestfireParamRecordMode.AUTOMATIC)
-//                                                     .withLocationTracking(TestfireParamLocationTracking.ENABLED)
-//                                                     .build();
-//        Testfire.initialize(params);
-//    }
-
 }
