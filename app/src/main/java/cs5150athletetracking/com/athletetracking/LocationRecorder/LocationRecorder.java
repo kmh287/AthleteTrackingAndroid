@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import cs5150athletetracking.com.athletetracking.Callbacks.ResultCallable;
+import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
 import cs5150athletetracking.com.athletetracking.Http.AsyncUploader;
 import cs5150athletetracking.com.athletetracking.JSONFormats.LocationJSON;
-import cs5150athletetracking.com.athletetracking.Callbacks.UIStatusCallback;
 import cs5150athletetracking.com.athletetracking.JSONFormats.LocationUploadJSON;
 import cs5150athletetracking.com.athletetracking.Util.ThreadUtil;
 
