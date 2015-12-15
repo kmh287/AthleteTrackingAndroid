@@ -8,7 +8,6 @@ import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -34,7 +33,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -43,18 +41,19 @@ import java.util.concurrent.TimeUnit;
 
 import cs5150athletetracking.com.athletetracking.Http.Uploader;
 import cs5150athletetracking.com.athletetracking.JSONFormats.LoginJSON;
-import io.testfire.Testfire;
-import io.testfire.TestfireParamCrashReporting;
-import io.testfire.TestfireParamGesture;
-import io.testfire.TestfireParamLocationTracking;
-import io.testfire.TestfireParamLogIntegration;
-import io.testfire.TestfireParamLogLevel;
-import io.testfire.TestfireParamSettings;
-import io.testfire.TestfireParamVideoQuality;
-import io.testfire.TestfireParams;
-import io.testfire.TestfireParamsBuilder;
 
 import static android.Manifest.permission.READ_CONTACTS;
+
+//import io.testfire.Testfire;
+//import io.testfire.TestfireParamCrashReporting;
+//import io.testfire.TestfireParamGesture;
+//import io.testfire.TestfireParamLocationTracking;
+//import io.testfire.TestfireParamLogIntegration;
+//import io.testfire.TestfireParamLogLevel;
+//import io.testfire.TestfireParamSettings;
+//import io.testfire.TestfireParamVideoQuality;
+//import io.testfire.TestfireParams;
+//import io.testfire.TestfireParamsBuilder;
 
 /**
  * This activity proves a login screen that offers login via email/password

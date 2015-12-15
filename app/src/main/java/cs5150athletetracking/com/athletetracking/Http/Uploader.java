@@ -72,7 +72,7 @@ public class Uploader {
 
     public JSONObject getResponseJSON(){
         try {
-            if (responseJSON == null) {
+            if (responseJSON == null && response != null) {
                 responseJSON = new JSONObject(response);
             }
             return responseJSON;

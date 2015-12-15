@@ -47,11 +47,7 @@ public class AsyncUploader extends AsyncTask<JSONObject, String, Boolean> {
         } else {
             Log.e(TAG, "Failed to confirm communication with server.");
             if (getCallBack() != null) {
-                if (response == null) {
-                    getCallBack().failure();
-                } else {
-                    getCallBack().failure();
-                }
+                getCallBack().failure();
             }
         }
         return result;
